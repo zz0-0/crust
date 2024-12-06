@@ -12,8 +12,6 @@ Each data type will include implementations of **CmRDT**, **CvRDT**, and **Delta
 
 **Crust** is currently in the early stages of development. The project only includes the basic structure for various CRDT data types, with no full implementation of the algorithms or features yet. This project is a work in progress, and the CRDT types (such as counters, graphs, registers, sets, and maps) are not yet functional.
 
-Feel free to explore the code, contribute, or track the progress, but please be aware that the core functionality has not been implemented yet.
-
 ## 📋 Table of Contents
 
 - [🌐 Crust - CRDTs in Rust](#-crust---crdts-in-rust)
@@ -27,7 +25,6 @@ Feel free to explore the code, contribute, or track the progress, but please be 
     - [🖊️ **Register**](#️-register)
     - [🛑 **Set**](#-set)
     - [🧪 **Tests**](#-tests)
-  - [🛠️ Installation](#️-installation)
   - [🤝 Contributing](#-contributing)
   - [📄 License](#-license)
 
@@ -40,7 +37,6 @@ Feel free to explore the code, contribute, or track the progress, but please be 
 ## 🛠️ To-Do
 
 <details> <summary>Tap to expand</summary>
-Here’s a **To-Do** list for the different CRDT data types you’re implementing in the **Crust** project:
 
 ### 🏗️ **Counter**
 
@@ -90,21 +86,6 @@ Here’s a **To-Do** list for the different CRDT data types you’re implementin
 
 </details>
 
-## 🛠️ Installation
-
-To get started with Crust, simply add the following to your `Cargo.toml`:
-
-```toml
-[dependencies]
-crust = "0.1"
-```
-
-Then, run:
-
-```bash
-cargo build
-```
-
 ## 🤝 Contributing
 
 We welcome contributions! If you’d like to contribute, please fork this repository, create a branch, and submit a pull request.
@@ -112,7 +93,7 @@ We welcome contributions! If you’d like to contribute, please fork this reposi
 Make sure to follow these steps:
 
 1. Fork this repo
-2. Clone your fork: `git clone https://github.com/your-username/crust.git`
+2. Clone your fork: `git clone https://github.com/zz0-0/crust.git`
 3. Create a branch: `git checkout -b feature/your-feature`
 4. Commit your changes: `git commit -m 'Add new feature'`
 5. Push to your fork: `git push origin feature/your-feature`
@@ -121,7 +102,3 @@ Make sure to follow these steps:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
-
----
-
-Let me know if you want any more updates!
