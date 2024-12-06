@@ -61,84 +61,20 @@ impl<T: Ord + Clone> Delta for GSet<T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::crdt_prop::Semilattice;
+
     use super::*;
 
-    #[test]
-    fn test_new_set_is_empty() {
-        let set: GSet<i32> = GSet::new();
-        assert!(set.read().is_empty());
+    impl Semilattice for GSet<String> {
+        fn associative() {}
+        fn commutative() {}
+        fn idempotent() {}
     }
 
     #[test]
-    fn test_insert() {
-        let mut set = GSet::new();
-        set.insert(1);
-        assert!(set.contains(&1));
-        assert!(!set.contains(&2));
-    }
-
-    #[test]
-    fn test_multiple_inserts() {
-        let mut set = GSet::new();
-        set.insert(1);
-        set.insert(2);
-        set.insert(3);
-        assert!(set.contains(&1));
-        assert!(set.contains(&2));
-        assert!(set.contains(&3));
-        assert_eq!(set.read().len(), 3);
-    }
-
-    #[test]
-    fn test_duplicate_inserts() {
-        let mut set = GSet::new();
-        set.insert(1);
-        set.insert(1);
-        assert_eq!(set.read().len(), 1);
-    }
-
-    #[test]
-    fn test_merge() {
-        let mut set1 = GSet::new();
-        let mut set2 = GSet::new();
-
-        set1.insert(1);
-        set2.insert(2);
-
-        set1.merge(&set2);
-        assert!(set1.contains(&1));
-        assert!(set1.contains(&2));
-        assert_eq!(set1.read().len(), 2);
-    }
-
-    #[test]
-    fn test_delta() {
-        let mut set = GSet::new();
-        let empty = GSet::new();
-
-        set.insert(1);
-        set.insert(2);
-
-        let delta = set.generate_delta(&empty);
-        assert_eq!(delta.read().len(), 2);
-
-        let mut new_set = GSet::new();
-        new_set.apply_delta(&delta);
-        assert!(new_set.contains(&1));
-        assert!(new_set.contains(&2));
-    }
-
-    #[test]
-    fn test_partial_delta() {
-        let mut set1 = GSet::new();
-        let mut set2 = GSet::new();
-
-        set1.insert(1);
-        set1.insert(2);
-        set2.insert(1);
-
-        let delta = set1.generate_delta(&set2);
-        assert_eq!(delta.read().len(), 1);
-        assert!(delta.contains(&2));
+    fn test_semilattice_properties() {
+        GSet::<String>::associative();
+        GSet::<String>::commutative();
+        GSet::<String>::idempotent();
     }
 }

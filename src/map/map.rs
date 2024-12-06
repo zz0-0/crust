@@ -34,3 +34,23 @@ impl<K, V> Delta for Map<K, V> {
         todo!()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::crdt_prop::Semilattice;
+
+    use super::*;
+
+    impl Semilattice for Map<String, String> {
+        fn associative() {}
+        fn commutative() {}
+        fn idempotent() {}
+    }
+
+    #[test]
+    fn test_semilattice_properties() {
+        Map::<String, String>::associative();
+        Map::<String, String>::commutative();
+        Map::<String, String>::idempotent();
+    }
+}

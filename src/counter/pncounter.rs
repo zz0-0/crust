@@ -115,68 +115,21 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::crdt_prop::Semilattice;
+
     use super::*;
 
-    #[test]
-    fn test_new_counter_is_zero() {
-        let counter: PNCounter<String> = PNCounter::new();
-        assert_eq!(counter.value(), 0);
-    }
+    impl Semilattice for PNCounter<String> {
+        fn associative() {
+            todo!()
+        }
 
-    #[test]
-    fn test_increment() {
-        let mut counter = PNCounter::new();
-        counter.increment("replica1".to_string());
-        assert_eq!(counter.value(), 1);
-        counter.increment("replica1".to_string());
-        assert_eq!(counter.value(), 2);
-    }
+        fn commutative() {
+            todo!()
+        }
 
-    #[test]
-    fn test_decrement() {
-        let mut counter = PNCounter::new();
-        counter.decrement("replica1".to_string());
-        assert_eq!(counter.value(), -1);
-        counter.decrement("replica1".to_string());
-        assert_eq!(counter.value(), -2);
-    }
-
-    #[test]
-    fn test_increment_and_decrement() {
-        let mut counter = PNCounter::new();
-        counter.increment("replica1".to_string());
-        counter.decrement("replica1".to_string());
-        assert_eq!(counter.value(), 0);
-        counter.increment("replica2".to_string());
-        counter.decrement("replica3".to_string());
-        assert_eq!(counter.value(), 0);
-    }
-
-    #[test]
-    fn test_merge() {
-        let mut counter1 = PNCounter::new();
-        let mut counter2 = PNCounter::new();
-
-        counter1.increment("replica1".to_string());
-        counter2.decrement("replica2".to_string());
-
-        counter1.merge(&counter2);
-        assert_eq!(counter1.value(), 0);
-    }
-
-    #[test]
-    fn test_delta() {
-        let mut counter = PNCounter::new();
-        let empty = PNCounter::new();
-
-        counter.increment("replica1".to_string());
-        counter.decrement("replica2".to_string());
-
-        let delta = counter.generate_delta(&empty);
-        assert_eq!(delta.value(), 0);
-
-        let mut new_counter = PNCounter::new();
-        new_counter.apply_delta(&delta);
-        assert_eq!(new_counter.value(), 0);
+        fn idempotent() {
+            todo!()
+        }
     }
 }

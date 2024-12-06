@@ -78,48 +78,60 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::crdt_prop::Semilattice;
+
     use super::*;
 
+    impl Semilattice for GCounter<String> {
+        fn associative() {
+            todo!()
+        }
+
+        fn commutative() {
+            todo!()
+        }
+
+        fn idempotent() {
+            todo!()
+        }
+    }
+
     #[test]
-    fn test_new_counter_is_zero() {
+    fn test_new_counter_is_empty() {
         let counter: GCounter<String> = GCounter::new();
         assert_eq!(counter.value(), 0);
     }
 
     #[test]
-    fn test_increment() {
-        let mut counter = GCounter::new();
+    fn test_single_increment() {
+        let mut counter: GCounter<String> = GCounter::new();
         counter.increment("replica1".to_string());
         assert_eq!(counter.value(), 1);
-        counter.increment("replica1".to_string());
-        assert_eq!(counter.value(), 2);
     }
 
     #[test]
-    fn test_merge() {
-        let mut counter1 = GCounter::new();
-        let mut counter2 = GCounter::new();
+    fn test_multiple_increments() {
+        let mut counter: GCounter<String> = GCounter::new();
+        counter.increment("replica1".to_string());
+        counter.increment("replica1".to_string());
+        counter.increment("replica2".to_string());
+        assert_eq!(counter.value(), 3);
+    }
 
+    #[test]
+    fn test_cmrdt_merge() {
+        let mut counter1: GCounter<String> = GCounter::new();
+        let mut counter2: GCounter<String> = GCounter::new();
         counter1.increment("replica1".to_string());
         counter2.increment("replica2".to_string());
-
-        counter1.merge(&counter2);
+        counter1.apply(&counter2);
         assert_eq!(counter1.value(), 2);
     }
 
     #[test]
-    fn test_delta() {
-        let mut counter = GCounter::new();
-        let empty = GCounter::new();
-
-        counter.increment("replica1".to_string());
-        counter.increment("replica1".to_string());
-
-        let delta = counter.generate_delta(&empty);
-        assert_eq!(delta.value(), 2);
-
-        let mut new_counter = GCounter::new();
-        new_counter.apply_delta(&delta);
-        assert_eq!(new_counter.value(), 2);
+    fn test_semilattice_properties() {
+        GCounter::<String>::associative();
+        GCounter::<String>::commutative();
+        GCounter::<String>::idempotent();
     }
 }

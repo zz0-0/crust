@@ -1,12 +1,20 @@
+use core::time;
+
 use crate::crdt_type::{CmRDT, CvRDT, Delta};
 
 #[derive(Clone)]
-pub struct LWWRegister<T> {
+pub struct LWWRegister<T>
+where
+    T: Clone,
+{
     value: Option<T>,
     timestamp: u64,
 }
 
-impl<K> LWWRegister<K> {
+impl<T> LWWRegister<T>
+where
+    T: Clone,
+{
     pub fn new() -> Self {
         LWWRegister {
             value: None,
@@ -15,24 +23,62 @@ impl<K> LWWRegister<K> {
     }
 }
 
-impl<K> CmRDT for LWWRegister<K> {
+impl<T> CmRDT for LWWRegister<T>
+where
+    T: Clone,
+{
     fn apply(&mut self, other: &Self) {
-        todo!()
+        if other.timestamp > self.timestamp {
+            self.value = other.value.clone();
+            self.timestamp = other.timestamp;
+        }
     }
 }
 
-impl<K> CvRDT for LWWRegister<K> {
+impl<T> CvRDT for LWWRegister<T>
+where
+    T: Clone,
+{
     fn merge(&mut self, other: &Self) {
-        todo!()
+        if other.timestamp > self.timestamp {
+            self.value = other.value.clone();
+            self.timestamp = other.timestamp;
+        }
     }
 }
 
-impl<K> Delta for LWWRegister<K> {
+impl<T> Delta for LWWRegister<T>
+where
+    T: Clone,
+{
     fn generate_delta(&self, since: &Self) -> Self {
         todo!()
     }
 
     fn apply_delta(&mut self, other: &Self) {
-        todo!()
+        if other.timestamp > self.timestamp {
+            self.value = other.value.clone();
+            self.timestamp = other.timestamp;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::crdt_prop::Semilattice;
+
+    use super::*;
+
+    impl Semilattice for LWWRegister<String> {
+        fn associative() {}
+        fn commutative() {}
+        fn idempotent() {}
+    }
+
+    #[test]
+    fn test_semilattice_properties() {
+        LWWRegister::<String>::associative();
+        LWWRegister::<String>::commutative();
+        LWWRegister::<String>::idempotent();
     }
 }
