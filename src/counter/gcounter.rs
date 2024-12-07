@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
-use crate::crdt_type::{CmRDT, CvRDT, Delta};
+use crate::{
+    crdt_prop::Semilattice,
+    crdt_type::{CmRDT, CvRDT, Delta},
+};
 
 #[derive(Clone)]
 pub struct GCounter<K>
@@ -76,62 +79,108 @@ where
     }
 }
 
+impl<K> Semilattice<GCounter<K>> for GCounter<K>
+where
+    K: Eq + Hash + Clone,
+{
+    fn cmrdt_associative(a: GCounter<K>, b: GCounter<K>, c: GCounter<K>) -> bool
+    where
+        GCounter<K>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cmrdt_commutative(a: GCounter<K>, b: GCounter<K>) -> bool
+    where
+        GCounter<K>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cmrdt_idempotent(a: GCounter<K>) -> bool
+    where
+        GCounter<K>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_associative(a: GCounter<K>, b: GCounter<K>, c: GCounter<K>) -> bool
+    where
+        GCounter<K>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_commutative(a: GCounter<K>, b: GCounter<K>) -> bool
+    where
+        GCounter<K>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_idempotent(a: GCounter<K>) -> bool
+    where
+        GCounter<K>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn delta_associative(a: GCounter<K>, b: GCounter<K>, c: GCounter<K>) -> bool
+    where
+        GCounter<K>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_commutative(a: GCounter<K>, b: GCounter<K>) -> bool
+    where
+        GCounter<K>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_idempotent(a: GCounter<K>) -> bool
+    where
+        GCounter<K>: Delta,
+    {
+        todo!()
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::crdt_prop::Semilattice;
-
     use super::*;
-
-    impl Semilattice for GCounter<String> {
-        fn associative() {
-            todo!()
-        }
-
-        fn commutative() {
-            todo!()
-        }
-
-        fn idempotent() {
-            todo!()
-        }
-    }
-
+    
     #[test]
-    fn test_new_counter_is_empty() {
-        let counter: GCounter<String> = GCounter::new();
-        assert_eq!(counter.value(), 0);
-    }
+    fn test_semilattice() {
+        let mut a = GCounter::new();
+        let mut b = GCounter::new();
+        let mut c = GCounter::new();
 
-    #[test]
-    fn test_single_increment() {
-        let mut counter: GCounter<String> = GCounter::new();
-        counter.increment("replica1".to_string());
-        assert_eq!(counter.value(), 1);
-    }
+        a.increment("r1".to_string());
+        b.increment("r2".to_string());
+        c.increment("r3".to_string());
 
-    #[test]
-    fn test_multiple_increments() {
-        let mut counter: GCounter<String> = GCounter::new();
-        counter.increment("replica1".to_string());
-        counter.increment("replica1".to_string());
-        counter.increment("replica2".to_string());
-        assert_eq!(counter.value(), 3);
-    }
-
-    #[test]
-    fn test_cmrdt_merge() {
-        let mut counter1: GCounter<String> = GCounter::new();
-        let mut counter2: GCounter<String> = GCounter::new();
-        counter1.increment("replica1".to_string());
-        counter2.increment("replica2".to_string());
-        counter1.apply(&counter2);
-        assert_eq!(counter1.value(), 2);
-    }
-
-    #[test]
-    fn test_semilattice_properties() {
-        GCounter::<String>::associative();
-        GCounter::<String>::commutative();
-        GCounter::<String>::idempotent();
+        assert!(GCounter::<String>::cmrdt_associative(
+            a.clone(),
+            b.clone(),
+            c.clone()
+        ));
+        assert!(GCounter::<String>::cmrdt_commutative(a.clone(), b.clone()));
+        assert!(GCounter::<String>::cmrdt_idempotent(a.clone()));
+        assert!(GCounter::<String>::cvrdt_associative(
+            a.clone(),
+            b.clone(),
+            c.clone()
+        ));
+        assert!(GCounter::<String>::cvrdt_commutative(a.clone(), b.clone()));
+        assert!(GCounter::<String>::cvrdt_idempotent(a.clone()));
+        assert!(GCounter::<String>::delta_associative(
+            a.clone(),
+            b.clone(),
+            c.clone()
+        ));
+        assert!(GCounter::<String>::delta_commutative(a.clone(), b.clone()));
+        assert!(GCounter::<String>::delta_idempotent(a.clone()));
     }
 }

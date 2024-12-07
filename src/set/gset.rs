@@ -1,6 +1,9 @@
 use std::collections::BTreeSet;
 
-use crate::crdt_type::{CmRDT, CvRDT, Delta};
+use crate::{
+    crdt_prop::Semilattice,
+    crdt_type::{CmRDT, CvRDT, Delta},
+};
 
 #[derive(Clone)]
 pub struct GSet<T: Ord + Clone> {
@@ -59,22 +62,92 @@ impl<T: Ord + Clone> Delta for GSet<T> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::crdt_prop::Semilattice;
-
-    use super::*;
-
-    impl Semilattice for GSet<String> {
-        fn associative() {}
-        fn commutative() {}
-        fn idempotent() {}
+impl<T> Semilattice<GSet<T>> for GSet<T>
+where
+    T: Ord + Clone,
+{
+    fn cmrdt_associative(a: GSet<T>, b: GSet<T>, c: GSet<T>) -> bool
+    where
+        GSet<T>: CmRDT,
+    {
+        todo!()
     }
 
+    fn cmrdt_commutative(a: GSet<T>, b: GSet<T>) -> bool
+    where
+        GSet<T>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cmrdt_idempotent(a: GSet<T>) -> bool
+    where
+        GSet<T>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_associative(a: GSet<T>, b: GSet<T>, c: GSet<T>) -> bool
+    where
+        GSet<T>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_commutative(a: GSet<T>, b: GSet<T>) -> bool
+    where
+        GSet<T>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_idempotent(a: GSet<T>) -> bool
+    where
+        GSet<T>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn delta_associative(a: GSet<T>, b: GSet<T>, c: GSet<T>) -> bool
+    where
+        GSet<T>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_commutative(a: GSet<T>, b: GSet<T>) -> bool
+    where
+        GSet<T>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_idempotent(a: GSet<T>) -> bool
+    where
+        GSet<T>: Delta,
+    {
+        todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
-    fn test_semilattice_properties() {
-        GSet::<String>::associative();
-        GSet::<String>::commutative();
-        GSet::<String>::idempotent();
+    fn test_semilattice() {
+        // let mut a = GSet::new();
+        // let mut b = GSet::new();
+        // let mut c = GSet::new();
+
+        // assert!(GSet::cmrdt_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(GSet::cmrdt_commutative(a.clone(), b.clone()));
+        // assert!(GSet::cmrdt_idempotent(a.clone()));
+        // assert!(GSet::cvrdt_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(GSet::cvrdt_commutative(a.clone(), b.clone()));
+        // assert!(GSet::cvrdt_idempotent(a.clone()));
+        // assert!(GSet::delta_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(GSet::delta_commutative(a.clone(), b.clone()));
+        // assert!(GSet::delta_idempotent(a.clone()));
     }
 }

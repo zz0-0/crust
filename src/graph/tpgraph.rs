@@ -3,7 +3,10 @@ use std::{
     hash::Hash,
 };
 
-use crate::crdt_type::{CmRDT, CvRDT, Delta};
+use crate::{
+    crdt_prop::Semilattice,
+    crdt_type::{CmRDT, CvRDT, Delta},
+};
 
 #[derive(Clone)]
 pub struct TPGraph<V, E>
@@ -90,22 +93,93 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::crdt_prop::Semilattice;
-
-    use super::*;
-
-    impl Semilattice for TPGraph<String, String> {
-        fn associative() {}
-        fn commutative() {}
-        fn idempotent() {}
+impl<V, E> Semilattice<TPGraph<V, E>> for TPGraph<V, E>
+where
+    V: Eq + Hash + Clone,
+    E: Eq + Hash + Clone,
+{
+    fn cmrdt_associative(a: TPGraph<V, E>, b: TPGraph<V, E>, c: TPGraph<V, E>) -> bool
+    where
+        TPGraph<V, E>: CmRDT,
+    {
+        todo!()
     }
 
+    fn cmrdt_commutative(a: TPGraph<V, E>, b: TPGraph<V, E>) -> bool
+    where
+        TPGraph<V, E>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cmrdt_idempotent(a: TPGraph<V, E>) -> bool
+    where
+        TPGraph<V, E>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_associative(a: TPGraph<V, E>, b: TPGraph<V, E>, c: TPGraph<V, E>) -> bool
+    where
+        TPGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_commutative(a: TPGraph<V, E>, b: TPGraph<V, E>) -> bool
+    where
+        TPGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_idempotent(a: TPGraph<V, E>) -> bool
+    where
+        TPGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn delta_associative(a: TPGraph<V, E>, b: TPGraph<V, E>, c: TPGraph<V, E>) -> bool
+    where
+        TPGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_commutative(a: TPGraph<V, E>, b: TPGraph<V, E>) -> bool
+    where
+        TPGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_idempotent(a: TPGraph<V, E>) -> bool
+    where
+        TPGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
-    fn test_semilattice_properties() {
-        TPGraph::<String, String>::associative();
-        TPGraph::<String, String>::commutative();
-        TPGraph::<String, String>::idempotent();
+    fn test_semilattice() {
+        // let mut a = TPGraph::new();
+        // let mut b = TPGraph::new();
+        // let mut c = TPGraph::new();
+
+        // assert!(TPGraph::cmrdt_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(TPGraph::cmrdt_commutative(a.clone(), b.clone()));
+        // assert!(TPGraph::cmrdt_idempotent(a.clone()));
+        // assert!(TPGraph::cvrdt_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(TPGraph::cvrdt_commutative(a.clone(), b.clone()));
+        // assert!(TPGraph::cvrdt_idempotent(a.clone()));
+        // assert!(TPGraph::delta_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(TPGraph::delta_commutative(a.clone(), b.clone()));
+        // assert!(TPGraph::delta_idempotent(a.clone()));
     }
 }

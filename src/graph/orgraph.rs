@@ -3,7 +3,10 @@ use std::{
     hash::Hash,
 };
 
-use crate::crdt_type::{CmRDT, CvRDT, Delta};
+use crate::{
+    crdt_prop::Semilattice,
+    crdt_type::{CmRDT, CvRDT, Delta},
+};
 
 #[derive(Clone)]
 pub struct ORGraph<V, E>
@@ -113,22 +116,93 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::crdt_prop::Semilattice;
-
-    use super::*;
-
-    impl Semilattice for ORGraph<String, String> {
-        fn associative() {}
-        fn commutative() {}
-        fn idempotent() {}
+impl<V, E> Semilattice<ORGraph<V, E>> for ORGraph<V, E>
+where
+    V: Eq + Hash + Clone,
+    E: Eq + Hash + Clone,
+{
+    fn cmrdt_associative(a: ORGraph<V, E>, b: ORGraph<V, E>, c: ORGraph<V, E>) -> bool
+    where
+        ORGraph<V, E>: CmRDT,
+    {
+        todo!()
     }
 
+    fn cmrdt_commutative(a: ORGraph<V, E>, b: ORGraph<V, E>) -> bool
+    where
+        ORGraph<V, E>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cmrdt_idempotent(a: ORGraph<V, E>) -> bool
+    where
+        ORGraph<V, E>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_associative(a: ORGraph<V, E>, b: ORGraph<V, E>, c: ORGraph<V, E>) -> bool
+    where
+        ORGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_commutative(a: ORGraph<V, E>, b: ORGraph<V, E>) -> bool
+    where
+        ORGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_idempotent(a: ORGraph<V, E>) -> bool
+    where
+        ORGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn delta_associative(a: ORGraph<V, E>, b: ORGraph<V, E>, c: ORGraph<V, E>) -> bool
+    where
+        ORGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_commutative(a: ORGraph<V, E>, b: ORGraph<V, E>) -> bool
+    where
+        ORGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_idempotent(a: ORGraph<V, E>) -> bool
+    where
+        ORGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
-    fn test_semilattice_properties() {
-        ORGraph::<String, String>::associative();
-        ORGraph::<String, String>::commutative();
-        ORGraph::<String, String>::idempotent();
+    fn test_semilattice() {
+        // let mut a = ORGraph::new();
+        // let mut b = ORGraph::new();
+        // let mut c = ORGraph::new();
+
+        // assert!(ORGraph::cmrdt_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(ORGraph::cmrdt_commutative(a.clone(), b.clone()));
+        // assert!(ORGraph::cmrdt_idempotent(a.clone()));
+        // assert!(ORGraph::cvrdt_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(ORGraph::cvrdt_commutative(a.clone(), b.clone()));
+        // assert!(ORGraph::cvrdt_idempotent(a.clone()));
+        // assert!(ORGraph::delta_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(ORGraph::delta_commutative(a.clone(), b.clone()));
+        // assert!(ORGraph::delta_idempotent(a.clone()));
     }
 }

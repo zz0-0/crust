@@ -1,6 +1,9 @@
 use std::{collections::HashSet, hash::Hash};
 
-use crate::crdt_type::{CmRDT, CvRDT, Delta};
+use crate::{
+    crdt_prop::Semilattice,
+    crdt_type::{CmRDT, CvRDT, Delta},
+};
 
 #[derive(Clone)]
 pub struct MVRegister<T>
@@ -82,22 +85,104 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::crdt_prop::Semilattice;
-
-    use super::*;
-
-    impl Semilattice for MVRegister<String> {
-        fn associative() {}
-        fn commutative() {}
-        fn idempotent() {}
+impl<T> Semilattice<MVRegister<T>> for MVRegister<T>
+where
+    T: Eq + Hash + Clone,
+{
+    fn cmrdt_associative(a: MVRegister<T>, b: MVRegister<T>, c: MVRegister<T>) -> bool
+    where
+        MVRegister<T>: CmRDT,
+    {
+        todo!()
     }
 
+    fn cmrdt_commutative(a: MVRegister<T>, b: MVRegister<T>) -> bool
+    where
+        MVRegister<T>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cmrdt_idempotent(a: MVRegister<T>) -> bool
+    where
+        MVRegister<T>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_associative(a: MVRegister<T>, b: MVRegister<T>, c: MVRegister<T>) -> bool
+    where
+        MVRegister<T>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_commutative(a: MVRegister<T>, b: MVRegister<T>) -> bool
+    where
+        MVRegister<T>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_idempotent(a: MVRegister<T>) -> bool
+    where
+        MVRegister<T>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn delta_associative(a: MVRegister<T>, b: MVRegister<T>, c: MVRegister<T>) -> bool
+    where
+        MVRegister<T>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_commutative(a: MVRegister<T>, b: MVRegister<T>) -> bool
+    where
+        MVRegister<T>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_idempotent(a: MVRegister<T>) -> bool
+    where
+        MVRegister<T>: Delta,
+    {
+        todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
-    fn test_semilattice_properties() {
-        MVRegister::<String>::associative();
-        MVRegister::<String>::commutative();
-        MVRegister::<String>::idempotent();
+    fn test_semilattice() {
+        // let mut a = MVRegister::new();
+        // let mut b = MVRegister::new();
+        // let mut c = MVRegister::new();
+
+        // assert!(MVRegister::cmrdt_associative(
+        //     a.clone(),
+        //     b.clone(),
+        //     c.clone()
+        // ));
+        // assert!(MVRegister::cmrdt_commutative(a.clone(), b.clone()));
+        // assert!(MVRegister::cmrdt_idempotent(a.clone()));
+        // assert!(MVRegister::cvrdt_associative(
+        //     a.clone(),
+        //     b.clone(),
+        //     c.clone()
+        // ));
+        // assert!(MVRegister::cvrdt_commutative(a.clone(), b.clone()));
+        // assert!(MVRegister::cvrdt_idempotent(a.clone()));
+        // assert!(MVRegister::delta_associative(
+        //     a.clone(),
+        //     b.clone(),
+        //     c.clone()
+        // ));
+        // assert!(MVRegister::delta_commutative(a.clone(), b.clone()));
+        // assert!(MVRegister::delta_idempotent(a.clone()));
     }
 }

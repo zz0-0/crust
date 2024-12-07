@@ -3,7 +3,10 @@ use std::{
     hash::Hash,
 };
 
-use crate::crdt_type::{CmRDT, CvRDT, Delta};
+use crate::{
+    crdt_prop::Semilattice,
+    crdt_type::{CmRDT, CvRDT, Delta},
+};
 
 #[derive(Clone)]
 pub struct AWGraph<V, E>
@@ -112,22 +115,93 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::crdt_prop::Semilattice;
-
-    use super::*;
-
-    impl Semilattice for AWGraph<String, String> {
-        fn associative() {}
-        fn commutative() {}
-        fn idempotent() {}
+impl<V, E> Semilattice<AWGraph<V, E>> for AWGraph<V, E>
+where
+    V: Eq + Hash + Clone,
+    E: Eq + Hash + Clone,
+{
+    fn cmrdt_associative(a: AWGraph<V, E>, b: AWGraph<V, E>, c: AWGraph<V, E>) -> bool
+    where
+        AWGraph<V, E>: CmRDT,
+    {
+        todo!()
     }
 
+    fn cmrdt_commutative(a: AWGraph<V, E>, b: AWGraph<V, E>) -> bool
+    where
+        AWGraph<V, E>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cmrdt_idempotent(a: AWGraph<V, E>) -> bool
+    where
+        AWGraph<V, E>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_associative(a: AWGraph<V, E>, b: AWGraph<V, E>, c: AWGraph<V, E>) -> bool
+    where
+        AWGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_commutative(a: AWGraph<V, E>, b: AWGraph<V, E>) -> bool
+    where
+        AWGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_idempotent(a: AWGraph<V, E>) -> bool
+    where
+        AWGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn delta_associative(a: AWGraph<V, E>, b: AWGraph<V, E>, c: AWGraph<V, E>) -> bool
+    where
+        AWGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_commutative(a: AWGraph<V, E>, b: AWGraph<V, E>) -> bool
+    where
+        AWGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_idempotent(a: AWGraph<V, E>) -> bool
+    where
+        AWGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
-    fn test_semilattice_properties() {
-        AWGraph::<String, String>::associative();
-        AWGraph::<String, String>::commutative();
-        AWGraph::<String, String>::idempotent();
+    fn test_semilattice() {
+        // let mut a = AWGraph::new();
+        // let mut b = AWGraph::new();
+        // let mut c = AWGraph::new();
+
+        // assert!(AWGraph::cmrdt_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(AWGraph::cmrdt_commutative(a.clone(), b.clone()));
+        // assert!(AWGraph::cmrdt_idempotent(a.clone()));
+        // assert!(AWGraph::cvrdt_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(AWGraph::cvrdt_commutative(a.clone(), b.clone()));
+        // assert!(AWGraph::cvrdt_idempotent(a.clone()));
+        // assert!(AWGraph::delta_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(AWGraph::delta_commutative(a.clone(), b.clone()));
+        // assert!(AWGraph::delta_idempotent(a.clone()));
     }
 }

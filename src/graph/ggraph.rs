@@ -3,7 +3,10 @@ use std::{
     hash::Hash,
 };
 
-use crate::crdt_type::{CmRDT, CvRDT, Delta};
+use crate::{
+    crdt_prop::Semilattice,
+    crdt_type::{CmRDT, CvRDT, Delta},
+};
 
 #[derive(Clone)]
 pub struct GGraph<V, E>
@@ -106,22 +109,93 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::crdt_prop::Semilattice;
-
-    use super::*;
-
-    impl Semilattice for GGraph<String, String> {
-        fn associative() {}
-        fn commutative() {}
-        fn idempotent() {}
+impl<V, E> Semilattice<GGraph<V, E>> for GGraph<V, E>
+where
+    V: Eq + Hash + Clone,
+    E: Eq + Hash + Clone,
+{
+    fn cmrdt_associative(a: GGraph<V, E>, b: GGraph<V, E>, c: GGraph<V, E>) -> bool
+    where
+        GGraph<V, E>: CmRDT,
+    {
+        todo!()
     }
 
+    fn cmrdt_commutative(a: GGraph<V, E>, b: GGraph<V, E>) -> bool
+    where
+        GGraph<V, E>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cmrdt_idempotent(a: GGraph<V, E>) -> bool
+    where
+        GGraph<V, E>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_associative(a: GGraph<V, E>, b: GGraph<V, E>, c: GGraph<V, E>) -> bool
+    where
+        GGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_commutative(a: GGraph<V, E>, b: GGraph<V, E>) -> bool
+    where
+        GGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_idempotent(a: GGraph<V, E>) -> bool
+    where
+        GGraph<V, E>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn delta_associative(a: GGraph<V, E>, b: GGraph<V, E>, c: GGraph<V, E>) -> bool
+    where
+        GGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_commutative(a: GGraph<V, E>, b: GGraph<V, E>) -> bool
+    where
+        GGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_idempotent(a: GGraph<V, E>) -> bool
+    where
+        GGraph<V, E>: Delta,
+    {
+        todo!()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
     #[test]
-    fn test_semilattice_properties() {
-        GGraph::<String, String>::associative();
-        GGraph::<String, String>::commutative();
-        GGraph::<String, String>::idempotent();
+    fn test_semilattice() {
+        // let mut a = GGraph::new();
+        // let mut b = GGraph::new();
+        // let mut c = GGraph::new();
+
+        // assert!(GGraph::cmrdt_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(GGraph::cmrdt_commutative(a.clone(), b.clone()));
+        // assert!(GGraph::cmrdt_idempotent(a.clone()));
+        // assert!(GGraph::cvrdt_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(GGraph::cvrdt_commutative(a.clone(), b.clone()));
+        // assert!(GGraph::cvrdt_idempotent(a.clone()));
+        // assert!(GGraph::delta_associative(a.clone(), b.clone(), c.clone()));
+        // assert!(GGraph::delta_commutative(a.clone(), b.clone()));
+        // assert!(GGraph::delta_idempotent(a.clone()));
     }
 }

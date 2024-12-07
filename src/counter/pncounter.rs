@@ -1,4 +1,7 @@
-use crate::crdt_type::{CmRDT, CvRDT, Delta};
+use crate::{
+    crdt_prop::Semilattice,
+    crdt_type::{CmRDT, CvRDT, Delta},
+};
 use std::{collections::HashMap, hash::Hash};
 
 #[derive(Clone)]
@@ -113,23 +116,106 @@ where
     }
 }
 
+impl<K> Semilattice<PNCounter<K>> for PNCounter<K>
+where
+    K: Eq + Hash + Clone,
+{
+    fn cmrdt_associative(a: PNCounter<K>, b: PNCounter<K>, c: PNCounter<K>) -> bool
+    where
+        PNCounter<K>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cmrdt_commutative(a: PNCounter<K>, b: PNCounter<K>) -> bool
+    where
+        PNCounter<K>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cmrdt_idempotent(a: PNCounter<K>) -> bool
+    where
+        PNCounter<K>: CmRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_associative(a: PNCounter<K>, b: PNCounter<K>, c: PNCounter<K>) -> bool
+    where
+        PNCounter<K>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_commutative(a: PNCounter<K>, b: PNCounter<K>) -> bool
+    where
+        PNCounter<K>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn cvrdt_idempotent(a: PNCounter<K>) -> bool
+    where
+        PNCounter<K>: CvRDT,
+    {
+        todo!()
+    }
+
+    fn delta_associative(a: PNCounter<K>, b: PNCounter<K>, c: PNCounter<K>) -> bool
+    where
+        PNCounter<K>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_commutative(a: PNCounter<K>, b: PNCounter<K>) -> bool
+    where
+        PNCounter<K>: Delta,
+    {
+        todo!()
+    }
+
+    fn delta_idempotent(a: PNCounter<K>) -> bool
+    where
+        PNCounter<K>: Delta,
+    {
+        todo!()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::crdt_prop::Semilattice;
 
     use super::*;
 
-    impl Semilattice for PNCounter<String> {
-        fn associative() {
-            todo!()
-        }
+    #[test]
+    fn test_semilattice() {
+        let mut a = PNCounter::new();
+        let mut b = PNCounter::new();
+        let mut c = PNCounter::new();
 
-        fn commutative() {
-            todo!()
-        }
-
-        fn idempotent() {
-            todo!()
-        }
+        assert!(PNCounter::<i32>::cmrdt_associative(
+            a.clone(),
+            b.clone(),
+            c.clone()
+        ));
+        assert!(PNCounter::<i32>::cmrdt_commutative(a.clone(), b.clone()));
+        assert!(PNCounter::<i32>::cmrdt_idempotent(a.clone()));
+        assert!(PNCounter::<i32>::cvrdt_associative(
+            a.clone(),
+            b.clone(),
+            c.clone()
+        ));
+        assert!(PNCounter::<i32>::cvrdt_commutative(a.clone(), b.clone()));
+        assert!(PNCounter::<i32>::cvrdt_idempotent(a.clone()));
+        assert!(PNCounter::<i32>::delta_associative(
+            a.clone(),
+            b.clone(),
+            c.clone()
+        ));
+        assert!(PNCounter::<i32>::delta_commutative(a.clone(), b.clone()));
+        assert!(PNCounter::<i32>::delta_idempotent(a.clone()));
     }
 }
