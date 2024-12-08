@@ -1,11 +1,10 @@
-use std::{collections::HashSet, hash::Hash};
-
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
 };
+use std::{collections::HashSet, hash::Hash};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct MVRegister<T>
 where
     T: Eq + Hash + Clone,
@@ -37,10 +36,11 @@ impl<T> CmRDT for MVRegister<T>
 where
     T: Eq + Hash + Clone,
 {
-    fn apply(&mut self, other: &Self) {
+    fn apply(&mut self, other: &Self) -> Self {
         for (value, timestamp) in &other.values {
             self.values.insert((value.clone(), *timestamp));
         }
+        self.clone()
     }
 }
 
@@ -48,7 +48,7 @@ impl<T> CvRDT for MVRegister<T>
 where
     T: Eq + Hash + Clone,
 {
-    fn merge(&mut self, other: &Self) {
+    fn merge(&mut self, other: &Self) -> Self {
         let max_timestamp = self
             .values
             .iter()
@@ -61,6 +61,7 @@ where
         other.values.iter().for_each(|(value, timestamp)| {
             self.values.insert((value.clone(), *timestamp));
         });
+        self.clone()
     }
 }
 
@@ -80,8 +81,9 @@ where
         }
     }
 
-    fn apply_delta(&mut self, other: &Self) {
+    fn apply_delta(&mut self, other: &Self) -> Self {
         self.merge(other);
+        self.clone()
     }
 }
 
@@ -93,63 +95,75 @@ where
     where
         MVRegister<T>: CmRDT,
     {
-        todo!()
+        let mut a_b = a.clone();
+        a_b.apply(&b);
+        let mut b_c = b.clone();
+        b_c.apply(&c);
+        a_b.apply(&c) == a.clone().apply(&b_c)
     }
 
     fn cmrdt_commutative(a: MVRegister<T>, b: MVRegister<T>) -> bool
     where
         MVRegister<T>: CmRDT,
     {
-        todo!()
+        a.clone().apply(&b) == b.clone().apply(&a)
     }
 
     fn cmrdt_idempotent(a: MVRegister<T>) -> bool
     where
         MVRegister<T>: CmRDT,
     {
-        todo!()
+        a.clone().apply(&a) == a.clone()
     }
 
     fn cvrdt_associative(a: MVRegister<T>, b: MVRegister<T>, c: MVRegister<T>) -> bool
     where
         MVRegister<T>: CvRDT,
     {
-        todo!()
+        let mut a_b = a.clone();
+        a_b.merge(&b);
+        let mut b_c = b.clone();
+        b_c.merge(&c);
+        a_b.merge(&c) == a.clone().merge(&b_c)
     }
 
     fn cvrdt_commutative(a: MVRegister<T>, b: MVRegister<T>) -> bool
     where
         MVRegister<T>: CvRDT,
     {
-        todo!()
+        a.clone().merge(&b) == b.clone().merge(&a)
     }
 
     fn cvrdt_idempotent(a: MVRegister<T>) -> bool
     where
         MVRegister<T>: CvRDT,
     {
-        todo!()
+        a.clone().merge(&a) == a.clone()
     }
 
     fn delta_associative(a: MVRegister<T>, b: MVRegister<T>, c: MVRegister<T>) -> bool
     where
         MVRegister<T>: Delta,
     {
-        todo!()
+        let mut a_b = a.clone();
+        a_b.apply_delta(&b);
+        let mut b_c = b.clone();
+        b_c.apply_delta(&c);
+        a_b.apply_delta(&c) == a.clone().apply_delta(&b_c)
     }
 
     fn delta_commutative(a: MVRegister<T>, b: MVRegister<T>) -> bool
     where
         MVRegister<T>: Delta,
     {
-        todo!()
+        a.clone().apply_delta(&b) == b.clone().apply_delta(&a)
     }
 
     fn delta_idempotent(a: MVRegister<T>) -> bool
     where
         MVRegister<T>: Delta,
     {
-        todo!()
+        a.clone().apply_delta(&a) == a.clone()
     }
 }
 
@@ -162,7 +176,6 @@ mod tests {
         // let mut a = MVRegister::new();
         // let mut b = MVRegister::new();
         // let mut c = MVRegister::new();
-
         // assert!(MVRegister::cmrdt_associative(
         //     a.clone(),
         //     b.clone(),

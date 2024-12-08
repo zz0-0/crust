@@ -1,5 +1,4 @@
 use crate::crdt_type::{CmRDT, CvRDT, Delta};
-
 pub trait Semilattice<T>
 where
     T: CmRDT + CvRDT + Delta,

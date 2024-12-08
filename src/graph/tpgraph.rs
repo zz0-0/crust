@@ -1,14 +1,13 @@
+use crate::{
+    crdt_prop::Semilattice,
+    crdt_type::{CmRDT, CvRDT, Delta},
+};
 use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
 };
 
-use crate::{
-    crdt_prop::Semilattice,
-    crdt_type::{CmRDT, CvRDT, Delta},
-};
-
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct TPGraph<V, E>
 where
     V: Hash + Eq + Clone,
@@ -52,14 +51,14 @@ where
     V: Hash + Eq + Clone,
     E: Hash + Eq + Clone,
 {
-    fn apply(&mut self, other: &Self) {
+    fn apply(&mut self, other: &Self) -> Self {
         self.vertices.extend(other.vertices.iter().cloned());
-
         for ((from, to), edge) in &other.edges {
             if !self.edges.contains_key(&(from.clone(), to.clone())) {
                 self.add_edge(from.clone(), to.clone(), edge.clone());
             }
         }
+        self.clone()
     }
 }
 
@@ -68,7 +67,7 @@ where
     V: Hash + Eq + Clone,
     E: Hash + Eq + Clone,
 {
-    fn merge(&mut self, other: &Self) {
+    fn merge(&mut self, other: &Self) -> Self {
         todo!()
     }
 }
@@ -82,7 +81,7 @@ where
         todo!()
     }
 
-    fn apply_delta(&mut self, other: &Self) {
+    fn apply_delta(&mut self, other: &Self) -> Self {
         self.vertices.extend(other.vertices.iter().cloned());
         self.edges.extend(
             other
@@ -90,6 +89,7 @@ where
                 .iter()
                 .map(|((f, t), e)| ((f.clone(), t.clone()), e.clone())),
         );
+        self.clone()
     }
 }
 
@@ -102,63 +102,75 @@ where
     where
         TPGraph<V, E>: CmRDT,
     {
-        todo!()
+        let mut a_b = a.clone();
+        a_b.apply(&b);
+        let mut b_c = b.clone();
+        b_c.apply(&c);
+        a_b.apply(&c) == a.clone().apply(&b_c)
     }
 
     fn cmrdt_commutative(a: TPGraph<V, E>, b: TPGraph<V, E>) -> bool
     where
         TPGraph<V, E>: CmRDT,
     {
-        todo!()
+        a.clone().apply(&b) == b.clone().apply(&a)
     }
 
     fn cmrdt_idempotent(a: TPGraph<V, E>) -> bool
     where
         TPGraph<V, E>: CmRDT,
     {
-        todo!()
+        a.clone().apply(&a) == a.clone()
     }
 
     fn cvrdt_associative(a: TPGraph<V, E>, b: TPGraph<V, E>, c: TPGraph<V, E>) -> bool
     where
         TPGraph<V, E>: CvRDT,
     {
-        todo!()
+        let mut a_b = a.clone();
+        a_b.merge(&b);
+        let mut b_c = b.clone();
+        b_c.merge(&c);
+        a_b.merge(&c) == a.clone().merge(&b_c)
     }
 
     fn cvrdt_commutative(a: TPGraph<V, E>, b: TPGraph<V, E>) -> bool
     where
         TPGraph<V, E>: CvRDT,
     {
-        todo!()
+        a.clone().merge(&b) == b.clone().merge(&a)
     }
 
     fn cvrdt_idempotent(a: TPGraph<V, E>) -> bool
     where
         TPGraph<V, E>: CvRDT,
     {
-        todo!()
+        a.clone().merge(&a) == a.clone()
     }
 
     fn delta_associative(a: TPGraph<V, E>, b: TPGraph<V, E>, c: TPGraph<V, E>) -> bool
     where
         TPGraph<V, E>: Delta,
     {
-        todo!()
+        let mut a_b = a.clone();
+        a_b.apply_delta(&b);
+        let mut b_c = b.clone();
+        b_c.apply_delta(&c);
+        a_b.apply_delta(&c) == a.clone().apply_delta(&b_c)
     }
 
     fn delta_commutative(a: TPGraph<V, E>, b: TPGraph<V, E>) -> bool
     where
         TPGraph<V, E>: Delta,
     {
-        todo!()
+        a.clone().apply_delta(&b) == b.clone().apply_delta(&a)
     }
 
     fn delta_idempotent(a: TPGraph<V, E>) -> bool
     where
         TPGraph<V, E>: Delta,
     {
-        todo!()
+        a.clone().apply_delta(&a) == a.clone()
     }
 }
 
@@ -171,7 +183,6 @@ mod tests {
         // let mut a = TPGraph::new();
         // let mut b = TPGraph::new();
         // let mut c = TPGraph::new();
-
         // assert!(TPGraph::cmrdt_associative(a.clone(), b.clone(), c.clone()));
         // assert!(TPGraph::cmrdt_commutative(a.clone(), b.clone()));
         // assert!(TPGraph::cmrdt_idempotent(a.clone()));
