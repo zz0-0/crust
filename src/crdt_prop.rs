@@ -1,33 +1,34 @@
 use crate::crdt_type::{CmRDT, CvRDT, Delta};
-pub trait Semilattice<T>
+pub trait Semilattice<K>
 where
-    T: CmRDT + CvRDT + Delta,
+    K: CmRDT + CvRDT + Delta,
 {
-    fn cmrdt_associative(a: T, b: T, c: T) -> bool
+    type Op;
+    fn cmrdt_associative(a: K, b: K, c: K) -> bool
     where
-        T: CmRDT;
-    fn cmrdt_commutative(a: T, b: T) -> bool
+        K: CmRDT;
+    fn cmrdt_commutative(a: K, b: K) -> bool
     where
-        T: CmRDT;
-    fn cmrdt_idempotent(a: T) -> bool
+        K: CmRDT;
+    fn cmrdt_idempotent(a: K) -> bool
     where
-        T: CmRDT;
-    fn cvrdt_associative(a: T, b: T, c: T) -> bool
+        K: CmRDT;
+    fn cvrdt_associative(a: K, b: K, c: K) -> bool
     where
-        T: CvRDT;
-    fn cvrdt_commutative(a: T, b: T) -> bool
+        K: CvRDT;
+    fn cvrdt_commutative(a: K, b: K) -> bool
     where
-        T: CvRDT;
-    fn cvrdt_idempotent(a: T) -> bool
+        K: CvRDT;
+    fn cvrdt_idempotent(a: K) -> bool
     where
-        T: CvRDT;
-    fn delta_associative(a: T, b: T, c: T) -> bool
+        K: CvRDT;
+    fn delta_associative(a: K, b: K, c: K) -> bool
     where
-        T: Delta;
-    fn delta_commutative(a: T, b: T) -> bool
+        K: Delta;
+    fn delta_commutative(a: K, b: K) -> bool
     where
-        T: Delta;
-    fn delta_idempotent(a: T) -> bool
+        K: Delta;
+    fn delta_idempotent(a: K) -> bool
     where
-        T: Delta;
+        K: Delta;
 }

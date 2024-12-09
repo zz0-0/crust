@@ -12,6 +12,11 @@ where
     n: HashMap<K, u64>,
 }
 
+pub enum Operation<K> {
+    Increment { key: K },
+    Decrement { key: K },
+}
+
 impl<K> PNCounter<K>
 where
     K: Eq + Hash + Clone,
@@ -42,26 +47,9 @@ impl<K> CmRDT for PNCounter<K>
 where
     K: Eq + Hash + Clone,
 {
-    fn apply(&mut self, other: &Self) -> Self {
-        for (replica, &count) in &other.p {
-            if let Some(&current) = self.p.get(replica) {
-                if count > current {
-                    self.p.insert(replica.clone(), count);
-                }
-            } else {
-                self.p.insert(replica.clone(), count);
-            }
-        }
-        for (replica, &count) in &other.n {
-            if let Some(&current) = self.n.get(replica) {
-                if count > current {
-                    self.n.insert(replica.clone(), count);
-                }
-            } else {
-                self.n.insert(replica.clone(), count);
-            }
-        }
-        self.clone()
+    type Op = Operation<K>;
+    fn apply(&mut self, op: Self::Op) {
+        todo!();
     }
 }
 
@@ -69,7 +57,7 @@ impl<K> CvRDT for PNCounter<K>
 where
     K: Eq + Hash + Clone,
 {
-    fn merge(&mut self, other: &Self) -> Self {
+    fn merge(&mut self, other: &Self) {
         for (replica, &count) in &other.p {
             let current_count = *self.p.entry(replica.clone()).or_insert(0);
             self.p.insert(replica.clone(), current_count.max(count));
@@ -78,7 +66,6 @@ where
             let current_count = *self.n.entry(replica.clone()).or_insert(0);
             self.n.insert(replica.clone(), current_count.max(count));
         }
-        self.clone()
     }
 }
 
@@ -107,39 +94,37 @@ where
         }
     }
 
-    fn apply_delta(&mut self, other: &Self) -> Self {
-        self.apply(other);
-        self.clone()
+    fn apply_delta(&mut self, other: &Self) {
+        self.merge(other);
     }
 }
 
 impl<K> Semilattice<PNCounter<K>> for PNCounter<K>
 where
     K: Eq + Hash + Clone,
+    Self: CmRDT<Op = Operation<K>>,
 {
+    type Op = Operation<K>;
+
     fn cmrdt_associative(a: PNCounter<K>, b: PNCounter<K>, c: PNCounter<K>) -> bool
     where
         PNCounter<K>: CmRDT,
     {
-        let mut a_b = a.clone();
-        a_b.apply(&b);
-        let mut b_c = b.clone();
-        b_c.apply(&c);
-        a_b.apply(&c) == a.clone().apply(&b_c)
+        todo!();
     }
 
     fn cmrdt_commutative(a: PNCounter<K>, b: PNCounter<K>) -> bool
     where
         PNCounter<K>: CmRDT,
     {
-        a.clone().apply(&b) == b.clone().apply(&a)
+        todo!();
     }
 
     fn cmrdt_idempotent(a: PNCounter<K>) -> bool
     where
         PNCounter<K>: CmRDT,
     {
-        a.clone().apply(&a) == a.clone()
+        todo!();
     }
 
     fn cvrdt_associative(a: PNCounter<K>, b: PNCounter<K>, c: PNCounter<K>) -> bool
@@ -150,21 +135,26 @@ where
         a_b.merge(&b);
         let mut b_c = b.clone();
         b_c.merge(&c);
-        a_b.merge(&c) == a.clone().merge(&b_c)
+        a_b.merge(&c);
+        a.clone().merge(&b_c);
+        a_b.value() == a.value()
     }
 
     fn cvrdt_commutative(a: PNCounter<K>, b: PNCounter<K>) -> bool
     where
         PNCounter<K>: CvRDT,
     {
-        a.clone().merge(&b) == b.clone().merge(&a)
+        a.clone().merge(&b);
+        b.clone().merge(&a);
+        a.value() == b.value()
     }
 
     fn cvrdt_idempotent(a: PNCounter<K>) -> bool
     where
         PNCounter<K>: CvRDT,
     {
-        a.clone().merge(&a) == a.clone()
+        a.clone().merge(&a);
+        a.value() == a.value()
     }
 
     fn delta_associative(a: PNCounter<K>, b: PNCounter<K>, c: PNCounter<K>) -> bool
@@ -175,21 +165,26 @@ where
         a_b.apply_delta(&b);
         let mut b_c = b.clone();
         b_c.apply_delta(&c);
-        a_b.apply_delta(&c) == a.clone().apply_delta(&b_c)
+        a_b.apply_delta(&c);
+        a.clone().apply_delta(&b_c);
+        a_b.value() == a.value()
     }
 
     fn delta_commutative(a: PNCounter<K>, b: PNCounter<K>) -> bool
     where
         PNCounter<K>: Delta,
     {
-        a.clone().apply_delta(&b) == b.clone().apply_delta(&a)
+        a.clone().apply_delta(&b);
+        b.clone().apply_delta(&a);
+        a.value() == b.value()
     }
 
     fn delta_idempotent(a: PNCounter<K>) -> bool
     where
         PNCounter<K>: Delta,
     {
-        a.clone().apply_delta(&a) == a.clone()
+        a.clone().apply_delta(&a);
+        a.value() == a.value()
     }
 }
 

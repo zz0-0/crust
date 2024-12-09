@@ -5,49 +5,49 @@ use crate::{
 use std::collections::BTreeSet;
 
 #[derive(Clone, PartialEq)]
-pub struct GSet<T: Ord + Clone> {
-    set: BTreeSet<T>,
+pub struct GSet<K: Ord + Clone> {
+    set: BTreeSet<K>,
 }
 
-impl<T: Ord + Clone> GSet<T> {
+pub enum Operation<K> {
+    Add(K),
+}
+
+impl<K: Ord + Clone> GSet<K> {
     pub fn new() -> Self {
         GSet {
             set: BTreeSet::new(),
         }
     }
 
-    pub fn insert(&mut self, value: T) {
+    pub fn insert(&mut self, value: K) {
         self.set.insert(value);
     }
 
-    pub fn contains(&self, value: &T) -> bool {
+    pub fn contains(&self, value: &K) -> bool {
         self.set.contains(value)
     }
 
-    pub fn read(&self) -> BTreeSet<T> {
+    pub fn read(&self) -> BTreeSet<K> {
         self.set.clone()
     }
 }
 
-impl<T: Ord + Clone> CmRDT for GSet<T> {
-    fn apply(&mut self, other: &Self) -> Self {
-        for element in other.set.iter() {
-            if !self.set.contains(element) {
-                self.set.insert(element.clone());
-            }
-        }
-        self.clone()
+impl<K: Ord + Clone> CmRDT for GSet<K> {
+    type Op = Operation<K>;
+
+    fn apply(&mut self, op: Self::Op) {
+        todo!();
     }
 }
 
-impl<T: Ord + Clone> CvRDT for GSet<T> {
-    fn merge(&mut self, other: &Self) -> Self {
+impl<K: Ord + Clone> CvRDT for GSet<K> {
+    fn merge(&mut self, other: &Self) {
         self.set.extend(other.set.iter().cloned());
-        self.clone()
     }
 }
 
-impl<T: Ord + Clone> Delta for GSet<T> {
+impl<K: Ord + Clone> Delta for GSet<K> {
     fn generate_delta(&self, since: &Self) -> Self {
         let mut delta = GSet::new();
         for element in self.set.iter() {
@@ -58,89 +58,79 @@ impl<T: Ord + Clone> Delta for GSet<T> {
         delta
     }
 
-    fn apply_delta(&mut self, other: &Self) -> Self {
+    fn apply_delta(&mut self, other: &Self) {
         self.set.extend(other.set.iter().cloned());
-        self.clone()
     }
 }
 
-impl<T> Semilattice<GSet<T>> for GSet<T>
+impl<K> Semilattice<GSet<K>> for GSet<K>
 where
-    T: Ord + Clone,
+    K: Ord + Clone,
+    Self: CmRDT<Op = Operation<K>>,
 {
-    fn cmrdt_associative(a: GSet<T>, b: GSet<T>, c: GSet<T>) -> bool
+    type Op = Operation<K>;
+
+    fn cmrdt_associative(a: GSet<K>, b: GSet<K>, c: GSet<K>) -> bool
     where
-        GSet<T>: CmRDT,
+        GSet<K>: CmRDT,
     {
-        let mut a_b = a.clone();
-        a_b.apply(&b);
-        let mut b_c = b.clone();
-        b_c.apply(&c);
-        a_b.apply(&c) == a.clone().apply(&b_c)
+        todo!();
     }
 
-    fn cmrdt_commutative(a: GSet<T>, b: GSet<T>) -> bool
+    fn cmrdt_commutative(a: GSet<K>, b: GSet<K>) -> bool
     where
-        GSet<T>: CmRDT,
+        GSet<K>: CmRDT,
     {
-        a.clone().apply(&b) == b.clone().apply(&a)
+        todo!();
     }
 
-    fn cmrdt_idempotent(a: GSet<T>) -> bool
+    fn cmrdt_idempotent(a: GSet<K>) -> bool
     where
-        GSet<T>: CmRDT,
+        GSet<K>: CmRDT,
     {
-        a.clone().apply(&a) == a.clone()
+        todo!();
     }
 
-    fn cvrdt_associative(a: GSet<T>, b: GSet<T>, c: GSet<T>) -> bool
+    fn cvrdt_associative(a: GSet<K>, b: GSet<K>, c: GSet<K>) -> bool
     where
-        GSet<T>: CvRDT,
+        GSet<K>: CvRDT,
     {
-        let mut a_b = a.clone();
-        a_b.merge(&b);
-        let mut b_c = b.clone();
-        b_c.merge(&c);
-        a_b.merge(&c) == a.clone().merge(&b_c)
+        todo!();
     }
 
-    fn cvrdt_commutative(a: GSet<T>, b: GSet<T>) -> bool
+    fn cvrdt_commutative(a: GSet<K>, b: GSet<K>) -> bool
     where
-        GSet<T>: CvRDT,
+        GSet<K>: CvRDT,
     {
-        a.clone().merge(&b) == b.clone().merge(&a)
+        todo!();
     }
 
-    fn cvrdt_idempotent(a: GSet<T>) -> bool
+    fn cvrdt_idempotent(a: GSet<K>) -> bool
     where
-        GSet<T>: CvRDT,
+        GSet<K>: CvRDT,
     {
-        a.clone().merge(&a) == a.clone()
+        todo!();
     }
 
-    fn delta_associative(a: GSet<T>, b: GSet<T>, c: GSet<T>) -> bool
+    fn delta_associative(a: GSet<K>, b: GSet<K>, c: GSet<K>) -> bool
     where
-        GSet<T>: Delta,
+        GSet<K>: Delta,
     {
-        let mut a_b = a.clone();
-        a_b.apply_delta(&b);
-        let mut b_c = b.clone();
-        b_c.apply_delta(&c);
-        a_b.apply_delta(&c) == a.clone().apply_delta(&b_c)
+        todo!();
     }
 
-    fn delta_commutative(a: GSet<T>, b: GSet<T>) -> bool
+    fn delta_commutative(a: GSet<K>, b: GSet<K>) -> bool
     where
-        GSet<T>: Delta,
+        GSet<K>: Delta,
     {
-        a.clone().apply_delta(&b) == b.clone().apply_delta(&a)
+        todo!();
     }
 
-    fn delta_idempotent(a: GSet<T>) -> bool
+    fn delta_idempotent(a: GSet<K>) -> bool
     where
-        GSet<T>: Delta,
+        GSet<K>: Delta,
     {
-        a.clone().apply_delta(&a) == a.clone()
+        todo!();
     }
 }
 

@@ -14,6 +14,11 @@ where
     entries: HashMap<K, V>,
 }
 
+pub enum Operation<K, V> {
+    Insert { key: K, value: V },
+    Remove { key: K },
+}
+
 impl<K, V> Map<K, V>
 where
     K: Eq + Hash + Clone,
@@ -29,7 +34,9 @@ where
     K: Eq + Hash + Clone,
     V: Eq + Hash + Clone,
 {
-    fn apply(&mut self, other: &Self) -> Self {
+    type Op = Operation<K, V>;
+
+    fn apply(&mut self, op: Self::Op) {
         todo!()
     }
 }
@@ -39,7 +46,7 @@ where
     K: Eq + Hash + Clone,
     V: Eq + Hash + Clone,
 {
-    fn merge(&mut self, other: &Self) -> Self {
+    fn merge(&mut self, other: &Self) {
         todo!()
     }
 }
@@ -53,7 +60,7 @@ where
         todo!()
     }
 
-    fn apply_delta(&mut self, other: &Self) -> Self {
+    fn apply_delta(&mut self, other: &Self) {
         todo!()
     }
 }
@@ -62,80 +69,71 @@ impl<K, V> Semilattice<Map<K, V>> for Map<K, V>
 where
     K: Eq + Clone + Hash,
     V: Eq + Clone + Hash,
+    Self: CmRDT<Op = Operation<K, V>>,
 {
+    type Op = Operation<K, V>;
+
     fn cmrdt_associative(a: Map<K, V>, b: Map<K, V>, c: Map<K, V>) -> bool
     where
         Map<K, V>: CmRDT,
     {
-        let mut a_b = a.clone();
-        a_b.apply(&b);
-        let mut b_c = b.clone();
-        b_c.apply(&c);
-        a_b.apply(&c) == a.clone().apply(&b_c)
+        todo!();
     }
 
     fn cmrdt_commutative(a: Map<K, V>, b: Map<K, V>) -> bool
     where
         Map<K, V>: CmRDT,
     {
-        a.clone().apply(&b) == b.clone().apply(&a)
+        todo!();
     }
 
     fn cmrdt_idempotent(a: Map<K, V>) -> bool
     where
         Map<K, V>: CmRDT,
     {
-        a.clone().apply(&a) == a.clone()
+        todo!();
     }
 
     fn cvrdt_associative(a: Map<K, V>, b: Map<K, V>, c: Map<K, V>) -> bool
     where
         Map<K, V>: CvRDT,
     {
-        let mut a_b = a.clone();
-        a_b.merge(&b);
-        let mut b_c = b.clone();
-        b_c.merge(&c);
-        a_b.merge(&c) == a.clone().merge(&b_c)
+        todo!();
     }
 
     fn cvrdt_commutative(a: Map<K, V>, b: Map<K, V>) -> bool
     where
         Map<K, V>: CvRDT,
     {
-        a.clone().merge(&b) == b.clone().merge(&a)
+        todo!();
     }
 
     fn cvrdt_idempotent(a: Map<K, V>) -> bool
     where
         Map<K, V>: CvRDT,
     {
-        a.clone().merge(&a) == a.clone()
+        todo!();
     }
 
     fn delta_associative(a: Map<K, V>, b: Map<K, V>, c: Map<K, V>) -> bool
     where
         Map<K, V>: Delta,
     {
-        let mut a_b = a.clone();
-        a_b.apply_delta(&b);
-        let mut b_c = b.clone();
-        b_c.apply_delta(&c);
-        a_b.apply_delta(&c) == a.clone().apply_delta(&b_c)
+        todo!();
     }
 
     fn delta_commutative(a: Map<K, V>, b: Map<K, V>) -> bool
     where
         Map<K, V>: Delta,
     {
-        a.clone().apply_delta(&b) == b.clone().apply_delta(&a)
+        todo!();
     }
 
     fn delta_idempotent(a: Map<K, V>) -> bool
     where
         Map<K, V>: Delta,
     {
-        a.clone().apply_delta(&a) == a.clone()
+        todo!();
     }
 }
 

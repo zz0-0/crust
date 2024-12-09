@@ -5,16 +5,20 @@ use crate::{
 use std::{collections::HashSet, hash::Hash};
 
 #[derive(Clone, PartialEq)]
-pub struct MVRegister<T>
+pub struct MVRegister<K>
 where
-    T: Eq + Hash + Clone,
+    K: Eq + Hash + Clone,
 {
-    values: HashSet<(T, u64)>,
+    values: HashSet<(K, u64)>,
 }
 
-impl<T> MVRegister<T>
+pub enum Operation<K> {
+    Write { value: K, timestamp: u64 },
+}
+
+impl<K> MVRegister<K>
 where
-    T: Eq + Hash + Clone,
+    K: Eq + Hash + Clone,
 {
     pub fn new() -> Self {
         MVRegister {
@@ -22,7 +26,7 @@ where
         }
     }
 
-    pub fn write(&mut self, value: T, timestamp: u64) {
+    pub fn write(&mut self, value: K, timestamp: u64) {
         self.values.clear();
         self.values.insert((value, timestamp));
     }
@@ -32,23 +36,22 @@ where
     }
 }
 
-impl<T> CmRDT for MVRegister<T>
+impl<K> CmRDT for MVRegister<K>
 where
-    T: Eq + Hash + Clone,
+    K: Eq + Hash + Clone,
 {
-    fn apply(&mut self, other: &Self) -> Self {
-        for (value, timestamp) in &other.values {
-            self.values.insert((value.clone(), *timestamp));
-        }
-        self.clone()
+    type Op = Operation<K>;
+
+    fn apply(&mut self, op: Self::Op) {
+        todo!();
     }
 }
 
-impl<T> CvRDT for MVRegister<T>
+impl<K> CvRDT for MVRegister<K>
 where
-    T: Eq + Hash + Clone,
+    K: Eq + Hash + Clone,
 {
-    fn merge(&mut self, other: &Self) -> Self {
+    fn merge(&mut self, other: &Self) {
         let max_timestamp = self
             .values
             .iter()
@@ -61,13 +64,12 @@ where
         other.values.iter().for_each(|(value, timestamp)| {
             self.values.insert((value.clone(), *timestamp));
         });
-        self.clone()
     }
 }
 
-impl<T> Delta for MVRegister<T>
+impl<K> Delta for MVRegister<K>
 where
-    T: Eq + Hash + Clone,
+    K: Eq + Hash + Clone,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         let since_max = since.timestamps().into_iter().max().unwrap_or(0);
@@ -81,89 +83,79 @@ where
         }
     }
 
-    fn apply_delta(&mut self, other: &Self) -> Self {
+    fn apply_delta(&mut self, other: &Self) {
         self.merge(other);
-        self.clone()
     }
 }
 
-impl<T> Semilattice<MVRegister<T>> for MVRegister<T>
+impl<K> Semilattice<MVRegister<K>> for MVRegister<K>
 where
-    T: Eq + Hash + Clone,
+    K: Eq + Hash + Clone,
+    Self: CmRDT<Op = Operation<K>>,
 {
-    fn cmrdt_associative(a: MVRegister<T>, b: MVRegister<T>, c: MVRegister<T>) -> bool
+    type Op = Operation<K>;
+
+    fn cmrdt_associative(a: MVRegister<K>, b: MVRegister<K>, c: MVRegister<K>) -> bool
     where
-        MVRegister<T>: CmRDT,
+        MVRegister<K>: CmRDT,
     {
-        let mut a_b = a.clone();
-        a_b.apply(&b);
-        let mut b_c = b.clone();
-        b_c.apply(&c);
-        a_b.apply(&c) == a.clone().apply(&b_c)
+        todo!();
     }
 
-    fn cmrdt_commutative(a: MVRegister<T>, b: MVRegister<T>) -> bool
+    fn cmrdt_commutative(a: MVRegister<K>, b: MVRegister<K>) -> bool
     where
-        MVRegister<T>: CmRDT,
+        MVRegister<K>: CmRDT,
     {
-        a.clone().apply(&b) == b.clone().apply(&a)
+        todo!();
     }
 
-    fn cmrdt_idempotent(a: MVRegister<T>) -> bool
+    fn cmrdt_idempotent(a: MVRegister<K>) -> bool
     where
-        MVRegister<T>: CmRDT,
+        MVRegister<K>: CmRDT,
     {
-        a.clone().apply(&a) == a.clone()
+        todo!();
     }
 
-    fn cvrdt_associative(a: MVRegister<T>, b: MVRegister<T>, c: MVRegister<T>) -> bool
+    fn cvrdt_associative(a: MVRegister<K>, b: MVRegister<K>, c: MVRegister<K>) -> bool
     where
-        MVRegister<T>: CvRDT,
+        MVRegister<K>: CvRDT,
     {
-        let mut a_b = a.clone();
-        a_b.merge(&b);
-        let mut b_c = b.clone();
-        b_c.merge(&c);
-        a_b.merge(&c) == a.clone().merge(&b_c)
+        todo!();
     }
 
-    fn cvrdt_commutative(a: MVRegister<T>, b: MVRegister<T>) -> bool
+    fn cvrdt_commutative(a: MVRegister<K>, b: MVRegister<K>) -> bool
     where
-        MVRegister<T>: CvRDT,
+        MVRegister<K>: CvRDT,
     {
-        a.clone().merge(&b) == b.clone().merge(&a)
+        todo!();
     }
 
-    fn cvrdt_idempotent(a: MVRegister<T>) -> bool
+    fn cvrdt_idempotent(a: MVRegister<K>) -> bool
     where
-        MVRegister<T>: CvRDT,
+        MVRegister<K>: CvRDT,
     {
-        a.clone().merge(&a) == a.clone()
+        todo!();
     }
 
-    fn delta_associative(a: MVRegister<T>, b: MVRegister<T>, c: MVRegister<T>) -> bool
+    fn delta_associative(a: MVRegister<K>, b: MVRegister<K>, c: MVRegister<K>) -> bool
     where
-        MVRegister<T>: Delta,
+        MVRegister<K>: Delta,
     {
-        let mut a_b = a.clone();
-        a_b.apply_delta(&b);
-        let mut b_c = b.clone();
-        b_c.apply_delta(&c);
-        a_b.apply_delta(&c) == a.clone().apply_delta(&b_c)
+        todo!();
     }
 
-    fn delta_commutative(a: MVRegister<T>, b: MVRegister<T>) -> bool
+    fn delta_commutative(a: MVRegister<K>, b: MVRegister<K>) -> bool
     where
-        MVRegister<T>: Delta,
+        MVRegister<K>: Delta,
     {
-        a.clone().apply_delta(&b) == b.clone().apply_delta(&a)
+        todo!();
     }
 
-    fn delta_idempotent(a: MVRegister<T>) -> bool
+    fn delta_idempotent(a: MVRegister<K>) -> bool
     where
-        MVRegister<T>: Delta,
+        MVRegister<K>: Delta,
     {
-        a.clone().apply_delta(&a) == a.clone()
+        todo!();
     }
 }
 

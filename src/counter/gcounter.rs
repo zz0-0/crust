@@ -13,6 +13,10 @@ where
     counter: HashMap<K, u64>,
 }
 
+pub enum Operation<K> {
+    Increment { key: K },
+}
+
 impl<K> GCounter<K>
 where
     K: Eq + Hash + Clone,
@@ -36,13 +40,12 @@ impl<K> CmRDT for GCounter<K>
 where
     K: Eq + Hash + Clone,
 {
-    fn apply(&mut self, other: &Self) -> Self {
-        for (replica, &count) in &other.counter {
-            let current_count = *self.counter.entry(replica.clone()).or_insert(0);
-            self.counter
-                .insert(replica.clone(), current_count.max(count));
+    type Op = Operation<K>;
+
+    fn apply(&mut self, op: Self::Op) {
+        match op {
+            Self::Op::Increment { key } => self.increment(key),
         }
-        self.clone()
     }
 }
 
@@ -50,13 +53,11 @@ impl<K> CvRDT for GCounter<K>
 where
     K: Eq + Hash + Clone,
 {
-    fn merge(&mut self, other: &Self) -> Self {
+    fn merge(&mut self, other: &Self) {
         for (replica, &count) in &other.counter {
-            let current_count = *self.counter.entry(replica.clone()).or_insert(0);
-            self.counter
-                .insert(replica.clone(), current_count.max(count));
+            let current_count = self.counter.entry(replica.clone()).or_insert(0);
+            *current_count = (*current_count).max(count);
         }
-        self.clone()
     }
 }
 
@@ -74,39 +75,69 @@ where
         }
         delta
     }
-    fn apply_delta(&mut self, delta: &Self) -> Self {
-        self.apply(delta);
-        self.clone()
+    fn apply_delta(&mut self, delta: &Self) {
+        self.merge(delta);
     }
 }
 
 impl<K> Semilattice<GCounter<K>> for GCounter<K>
 where
     K: Eq + Hash + Clone,
+    Self: CmRDT<Op = Operation<K>>,
 {
+    type Op = Operation<K>;
+
     fn cmrdt_associative(a: GCounter<K>, b: GCounter<K>, c: GCounter<K>) -> bool
     where
         GCounter<K>: CmRDT,
     {
-        let mut a_b = a.clone();
-        a_b.apply(&b);
-        let mut b_c = b.clone();
-        b_c.apply(&c);
-        a_b.apply(&c) == a.clone().apply(&b_c)
+        let mut ab_c = a.clone();
+        let mut bc = b.clone();
+
+        if let Some(k) = b.counter.keys().next() {
+            ab_c.apply(Self::Op::Increment { key: k.clone() });
+        }
+
+        if let Some(k) = c.counter.keys().next() {
+            bc.apply(Self::Op::Increment { key: k.clone() });
+        }
+
+        if let Some(k) = c.counter.keys().next() {
+            ab_c.apply(Self::Op::Increment { key: k.clone() });
+        }
+
+        let mut a_bc = a.clone();
+        if let Some(k) = bc.counter.keys().next() {
+            a_bc.apply(Self::Op::Increment { key: k.clone() });
+        }
+
+        ab_c.value() == a_bc.value()
     }
 
     fn cmrdt_commutative(a: GCounter<K>, b: GCounter<K>) -> bool
     where
         GCounter<K>: CmRDT,
     {
-        a.clone().apply(&b) == b.clone().apply(&a)
+        let mut ab = a.clone();
+        let mut ba = b.clone();
+        if let Some(k) = b.counter.keys().next() {
+            ab.apply(Self::Op::Increment { key: k.clone() });
+        }
+        if let Some(k) = a.counter.keys().next() {
+            ba.apply(Self::Op::Increment { key: k.clone() });
+        }
+        ab.value() == ba.value()
     }
 
     fn cmrdt_idempotent(a: GCounter<K>) -> bool
     where
         GCounter<K>: CmRDT,
     {
-        a.clone().apply(&a) == a.clone()
+        let mut a1 = a.clone();
+        if let Some(k) = a.counter.keys().next() {
+            a1.apply(Operation::Increment { key: k.clone() });
+        }
+        a1.value() == a.value()
     }
 
     fn cvrdt_associative(a: GCounter<K>, b: GCounter<K>, c: GCounter<K>) -> bool
@@ -117,21 +148,26 @@ where
         a_b.merge(&b);
         let mut b_c = b.clone();
         b_c.merge(&c);
-        a_b.merge(&c) == a.clone().merge(&b_c)
+        a_b.merge(&c);
+        a.clone().merge(&b_c);
+        a_b.value() == a.value()
     }
 
     fn cvrdt_commutative(a: GCounter<K>, b: GCounter<K>) -> bool
     where
         GCounter<K>: CvRDT,
     {
-        a.clone().merge(&b) == b.clone().merge(&a)
+        a.clone().merge(&b);
+        b.clone().merge(&a);
+        a.value() == b.value()
     }
 
     fn cvrdt_idempotent(a: GCounter<K>) -> bool
     where
         GCounter<K>: CvRDT,
     {
-        a.clone().merge(&a) == a.clone()
+        a.clone().merge(&a);
+        a.value() == a.value()
     }
 
     fn delta_associative(a: GCounter<K>, b: GCounter<K>, c: GCounter<K>) -> bool
@@ -142,21 +178,26 @@ where
         a_b.apply_delta(&b);
         let mut b_c = b.clone();
         b_c.apply_delta(&c);
-        a_b.apply_delta(&c) == a.clone().apply_delta(&b_c)
+        a_b.apply_delta(&c);
+        a.clone().apply_delta(&b_c);
+        a_b.value() == a.value()
     }
 
     fn delta_commutative(a: GCounter<K>, b: GCounter<K>) -> bool
     where
         GCounter<K>: Delta,
     {
-        a.clone().apply_delta(&b) == b.clone().apply_delta(&a)
+        a.clone().apply_delta(&b);
+        b.clone().apply_delta(&a);
+        a.value() == b.value()
     }
 
     fn delta_idempotent(a: GCounter<K>) -> bool
     where
         GCounter<K>: Delta,
     {
-        a.clone().apply_delta(&a) == a.clone()
+        a.clone().apply_delta(&a);
+        a.value() == a.value()
     }
 }
 

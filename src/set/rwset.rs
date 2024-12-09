@@ -5,16 +5,21 @@ use crate::{
 use std::collections::BTreeSet;
 
 #[derive(Clone, PartialEq)]
-pub struct RWSet<T>
+pub struct RWSet<K>
 where
-    T: Ord,
+    K: Ord,
 {
-    set: BTreeSet<T>,
+    set: BTreeSet<K>,
 }
 
-impl<T> RWSet<T>
+pub enum Operation<K> {
+    Add(K),
+    Remove(K),
+}
+
+impl<K> RWSet<K>
 where
-    T: Ord,
+    K: Ord,
 {
     pub fn new() -> Self {
         RWSet {
@@ -22,122 +27,114 @@ where
         }
     }
 
-    pub fn insert(&mut self, value: T) {
+    pub fn insert(&mut self, value: K) {
         self.set.insert(value);
     }
 
-    pub fn remove(&mut self, value: &T) {
+    pub fn remove(&mut self, value: &K) {
         self.set.remove(value);
     }
 }
 
-impl<T> CmRDT for RWSet<T>
+impl<K> CmRDT for RWSet<K>
 where
-    T: Ord,
+    K: Ord,
 {
-    fn apply(&mut self, other: &Self) -> Self {
+    type Op = Operation<K>;
+    fn apply(&mut self, op: Self::Op) {
         todo!()
     }
 }
 
-impl<T> CvRDT for RWSet<T>
+impl<K> CvRDT for RWSet<K>
 where
-    T: Ord,
+    K: Ord,
 {
-    fn merge(&mut self, other: &Self) -> Self {
+    fn merge(&mut self, other: &Self) {
         todo!()
     }
 }
 
-impl<T> Delta for RWSet<T>
+impl<K> Delta for RWSet<K>
 where
-    T: Ord,
+    K: Ord,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         todo!()
     }
-    fn apply_delta(&mut self, other: &Self) -> Self {
+    fn apply_delta(&mut self, other: &Self) {
         todo!()
     }
 }
 
-impl<T> Semilattice<RWSet<T>> for RWSet<T>
+impl<K> Semilattice<RWSet<K>> for RWSet<K>
 where
-    T: Ord + Clone,
+    K: Ord + Clone,
+    Self: CmRDT<Op = Operation<K>>,
 {
-    fn cmrdt_associative(a: RWSet<T>, b: RWSet<T>, c: RWSet<T>) -> bool
+    type Op = Operation<K>;
+
+    fn cmrdt_associative(a: RWSet<K>, b: RWSet<K>, c: RWSet<K>) -> bool
     where
-        RWSet<T>: CmRDT,
+        RWSet<K>: CmRDT,
     {
-        let mut a_b = a.clone();
-        a_b.apply(&b);
-        let mut b_c = b.clone();
-        b_c.apply(&c);
-        a_b.apply(&c) == a.clone().apply(&b_c)
+        todo!();
     }
 
-    fn cmrdt_commutative(a: RWSet<T>, b: RWSet<T>) -> bool
+    fn cmrdt_commutative(a: RWSet<K>, b: RWSet<K>) -> bool
     where
-        RWSet<T>: CmRDT,
+        RWSet<K>: CmRDT,
     {
-        a.clone().apply(&b) == b.clone().apply(&a)
+        todo!();
     }
 
-    fn cmrdt_idempotent(a: RWSet<T>) -> bool
+    fn cmrdt_idempotent(a: RWSet<K>) -> bool
     where
-        RWSet<T>: CmRDT,
+        RWSet<K>: CmRDT,
     {
-        a.clone().apply(&a) == a.clone()
+        todo!();
     }
 
-    fn cvrdt_associative(a: RWSet<T>, b: RWSet<T>, c: RWSet<T>) -> bool
+    fn cvrdt_associative(a: RWSet<K>, b: RWSet<K>, c: RWSet<K>) -> bool
     where
-        RWSet<T>: CvRDT,
+        RWSet<K>: CvRDT,
     {
-        let mut a_b = a.clone();
-        a_b.merge(&b);
-        let mut b_c = b.clone();
-        b_c.merge(&c);
-        a_b.merge(&c) == a.clone().merge(&b_c)
+        todo!();
     }
 
-    fn cvrdt_commutative(a: RWSet<T>, b: RWSet<T>) -> bool
+    fn cvrdt_commutative(a: RWSet<K>, b: RWSet<K>) -> bool
     where
-        RWSet<T>: CvRDT,
+        RWSet<K>: CvRDT,
     {
-        a.clone().merge(&b) == b.clone().merge(&a)
+        todo!();
     }
 
-    fn cvrdt_idempotent(a: RWSet<T>) -> bool
+    fn cvrdt_idempotent(a: RWSet<K>) -> bool
     where
-        RWSet<T>: CvRDT,
+        RWSet<K>: CvRDT,
     {
-        a.clone().merge(&a) == a.clone()
+        todo!();
     }
 
-    fn delta_associative(a: RWSet<T>, b: RWSet<T>, c: RWSet<T>) -> bool
+    fn delta_associative(a: RWSet<K>, b: RWSet<K>, c: RWSet<K>) -> bool
     where
-        RWSet<T>: Delta,
+        RWSet<K>: Delta,
     {
-        let mut a_b = a.clone();
-        a_b.apply_delta(&b);
-        let mut b_c = b.clone();
-        b_c.apply_delta(&c);
-        a_b.apply_delta(&c) == a.clone().apply_delta(&b_c)
+        todo!();
     }
 
-    fn delta_commutative(a: RWSet<T>, b: RWSet<T>) -> bool
+    fn delta_commutative(a: RWSet<K>, b: RWSet<K>) -> bool
     where
-        RWSet<T>: Delta,
+        RWSet<K>: Delta,
     {
-        a.clone().apply_delta(&b) == b.clone().apply_delta(&a)
+        todo!();
     }
 
-    fn delta_idempotent(a: RWSet<T>) -> bool
+    fn delta_idempotent(a: RWSet<K>) -> bool
     where
-        RWSet<T>: Delta,
+        RWSet<K>: Delta,
     {
-        a.clone().apply_delta(&a) == a.clone()
+        todo!();
     }
 }
 

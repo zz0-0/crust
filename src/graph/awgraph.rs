@@ -17,6 +17,13 @@ where
     edges: HashMap<(V, V), E>,
 }
 
+pub enum Operation<V, E> {
+    AddVertex { vertex: V },
+    RemoveVertex { vertex: V },
+    AddEdge { from: V, to: V, edge: E },
+    RemoveEdge { from: V, to: V },
+}
+
 impl<V, E> AWGraph<V, E>
 where
     V: Hash + Eq + Clone,
@@ -51,14 +58,10 @@ where
     V: Hash + Eq + Clone,
     E: Hash + Eq + Clone,
 {
-    fn apply(&mut self, other: &Self) -> Self {
-        self.vertices.extend(other.vertices.iter().cloned());
-        for ((from, to), edge) in &other.edges {
-            if !self.edges.contains_key(&(from.clone(), to.clone())) {
-                self.add_edge(from.clone(), to.clone(), edge.clone());
-            }
-        }
-        self.clone()
+    type Op = Operation<V, E>;
+
+    fn apply(&mut self, op: Self::Op) {
+        todo!();
     }
 }
 
@@ -67,7 +70,7 @@ where
     V: Hash + Eq + Clone,
     E: Hash + Eq + Clone,
 {
-    fn merge(&mut self, other: &Self) -> Self {
+    fn merge(&mut self, other: &Self) {
         self.vertices.extend(other.vertices.iter().cloned());
         self.edges.extend(
             other
@@ -75,7 +78,6 @@ where
                 .iter()
                 .map(|((f, t), e)| ((f.clone(), t.clone()), e.clone())),
         );
-        self.clone()
     }
 }
 
@@ -100,7 +102,7 @@ where
         AWGraph { vertices, edges }
     }
 
-    fn apply_delta(&mut self, other: &Self) -> Self {
+    fn apply_delta(&mut self, other: &Self) {
         self.vertices.extend(other.vertices.iter().cloned());
         self.edges.extend(
             other
@@ -108,7 +110,6 @@ where
                 .iter()
                 .map(|((f, t), e)| ((f.clone(), t.clone()), e.clone())),
         );
-        self.clone()
     }
 }
 
@@ -116,80 +117,71 @@ impl<V, E> Semilattice<AWGraph<V, E>> for AWGraph<V, E>
 where
     V: Eq + Hash + Clone,
     E: Eq + Hash + Clone,
+    Self: CmRDT<Op = Operation<V, E>>,
 {
+    type Op = Operation<V, E>;
+
     fn cmrdt_associative(a: AWGraph<V, E>, b: AWGraph<V, E>, c: AWGraph<V, E>) -> bool
     where
         AWGraph<V, E>: CmRDT,
     {
-        let mut a_b = a.clone();
-        a_b.apply(&b);
-        let mut b_c = b.clone();
-        b_c.apply(&c);
-        a_b.apply(&c) == a.clone().apply(&b_c)
+        todo!();
     }
 
     fn cmrdt_commutative(a: AWGraph<V, E>, b: AWGraph<V, E>) -> bool
     where
         AWGraph<V, E>: CmRDT,
     {
-        a.clone().apply(&b) == b.clone().apply(&a)
+        todo!();
     }
 
     fn cmrdt_idempotent(a: AWGraph<V, E>) -> bool
     where
         AWGraph<V, E>: CmRDT,
     {
-        a.clone().apply(&a) == a.clone()
+        todo!();
     }
 
     fn cvrdt_associative(a: AWGraph<V, E>, b: AWGraph<V, E>, c: AWGraph<V, E>) -> bool
     where
         AWGraph<V, E>: CvRDT,
     {
-        let mut a_b = a.clone();
-        a_b.merge(&b);
-        let mut b_c = b.clone();
-        b_c.merge(&c);
-        a_b.merge(&c) == a.clone().merge(&b_c)
+        todo!();
     }
 
     fn cvrdt_commutative(a: AWGraph<V, E>, b: AWGraph<V, E>) -> bool
     where
         AWGraph<V, E>: CvRDT,
     {
-        a.clone().merge(&b) == b.clone().merge(&a)
+        todo!();
     }
 
     fn cvrdt_idempotent(a: AWGraph<V, E>) -> bool
     where
         AWGraph<V, E>: CvRDT,
     {
-        a.clone().merge(&a) == a.clone()
+        todo!();
     }
 
     fn delta_associative(a: AWGraph<V, E>, b: AWGraph<V, E>, c: AWGraph<V, E>) -> bool
     where
         AWGraph<V, E>: Delta,
     {
-        let mut a_b = a.clone();
-        a_b.apply_delta(&b);
-        let mut b_c = b.clone();
-        b_c.apply_delta(&c);
-        a_b.apply_delta(&c) == a.clone().apply_delta(&b_c)
+        todo!();
     }
 
     fn delta_commutative(a: AWGraph<V, E>, b: AWGraph<V, E>) -> bool
     where
         AWGraph<V, E>: Delta,
     {
-        a.clone().apply_delta(&b) == b.clone().apply_delta(&a)
+        todo!();
     }
 
     fn delta_idempotent(a: AWGraph<V, E>) -> bool
     where
         AWGraph<V, E>: Delta,
     {
-        a.clone().apply_delta(&a) == a.clone()
+        todo!();
     }
 }
 

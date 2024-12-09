@@ -5,17 +5,21 @@ use crate::{
 use core::time;
 
 #[derive(Clone, PartialEq)]
-pub struct LWWRegister<T>
+pub struct LWWRegister<K>
 where
-    T: Clone,
+    K: Clone,
 {
-    value: Option<T>,
+    value: Option<K>,
     timestamp: u64,
 }
 
-impl<T> LWWRegister<T>
+pub enum Operation<K> {
+    Set(K, u64),
+}
+
+impl<K> LWWRegister<K>
 where
-    T: Clone,
+    K: Clone,
 {
     pub fn new() -> Self {
         LWWRegister {
@@ -25,126 +29,113 @@ where
     }
 }
 
-impl<T> CmRDT for LWWRegister<T>
+impl<K> CmRDT for LWWRegister<K>
 where
-    T: Clone,
+    K: Clone,
 {
-    fn apply(&mut self, other: &Self) -> Self {
+    type Op = Operation<K>;
+
+    fn apply(&mut self, op: Self::Op) {
+        todo!();
+    }
+}
+
+impl<K> CvRDT for LWWRegister<K>
+where
+    K: Clone,
+{
+    fn merge(&mut self, other: &Self) {
         if other.timestamp > self.timestamp {
             self.value = other.value.clone();
             self.timestamp = other.timestamp;
         }
-        self.clone()
     }
 }
 
-impl<T> CvRDT for LWWRegister<T>
+impl<K> Delta for LWWRegister<K>
 where
-    T: Clone,
-{
-    fn merge(&mut self, other: &Self) -> Self {
-        if other.timestamp > self.timestamp {
-            self.value = other.value.clone();
-            self.timestamp = other.timestamp;
-        }
-        self.clone()
-    }
-}
-
-impl<T> Delta for LWWRegister<T>
-where
-    T: Clone,
+    K: Clone,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         todo!()
     }
 
-    fn apply_delta(&mut self, other: &Self) -> Self {
+    fn apply_delta(&mut self, other: &Self) {
         if other.timestamp > self.timestamp {
             self.value = other.value.clone();
             self.timestamp = other.timestamp;
         }
-        self.clone()
     }
 }
 
-impl<T> Semilattice<LWWRegister<T>> for LWWRegister<T>
+impl<K> Semilattice<LWWRegister<K>> for LWWRegister<K>
 where
-    T: Clone + PartialEq,
+    K: Clone + PartialEq,
+    Self: CmRDT<Op = Operation<K>>,
 {
-    fn cmrdt_associative(a: LWWRegister<T>, b: LWWRegister<T>, c: LWWRegister<T>) -> bool
+    type Op = Operation<K>;
+
+    fn cmrdt_associative(a: LWWRegister<K>, b: LWWRegister<K>, c: LWWRegister<K>) -> bool
     where
-        LWWRegister<T>: CmRDT,
+        LWWRegister<K>: CmRDT,
     {
-        let mut a_b = a.clone();
-        a_b.apply(&b);
-        let mut b_c = b.clone();
-        b_c.apply(&c);
-        a_b.apply(&c) == a.clone().apply(&b_c)
+        todo!();
     }
 
-    fn cmrdt_commutative(a: LWWRegister<T>, b: LWWRegister<T>) -> bool
+    fn cmrdt_commutative(a: LWWRegister<K>, b: LWWRegister<K>) -> bool
     where
-        LWWRegister<T>: CmRDT,
+        LWWRegister<K>: CmRDT,
     {
-        a.clone().apply(&b) == b.clone().apply(&a)
+        todo!();
     }
 
-    fn cmrdt_idempotent(a: LWWRegister<T>) -> bool
+    fn cmrdt_idempotent(a: LWWRegister<K>) -> bool
     where
-        LWWRegister<T>: CmRDT,
+        LWWRegister<K>: CmRDT,
     {
-        a.clone().apply(&a) == a.clone()
+        todo!();
     }
 
-    fn cvrdt_associative(a: LWWRegister<T>, b: LWWRegister<T>, c: LWWRegister<T>) -> bool
+    fn cvrdt_associative(a: LWWRegister<K>, b: LWWRegister<K>, c: LWWRegister<K>) -> bool
     where
-        LWWRegister<T>: CvRDT,
+        LWWRegister<K>: CvRDT,
     {
-        let mut a_b = a.clone();
-        a_b.merge(&b);
-        let mut b_c = b.clone();
-        b_c.merge(&c);
-        a_b.merge(&c) == a.clone().merge(&b_c)
+        todo!();
     }
 
-    fn cvrdt_commutative(a: LWWRegister<T>, b: LWWRegister<T>) -> bool
+    fn cvrdt_commutative(a: LWWRegister<K>, b: LWWRegister<K>) -> bool
     where
-        LWWRegister<T>: CvRDT,
+        LWWRegister<K>: CvRDT,
     {
-        a.clone().merge(&b) == b.clone().merge(&a)
+        todo!();
     }
 
-    fn cvrdt_idempotent(a: LWWRegister<T>) -> bool
+    fn cvrdt_idempotent(a: LWWRegister<K>) -> bool
     where
-        LWWRegister<T>: CvRDT,
+        LWWRegister<K>: CvRDT,
     {
-        a.clone().merge(&a) == a.clone()
+        todo!();
     }
 
-    fn delta_associative(a: LWWRegister<T>, b: LWWRegister<T>, c: LWWRegister<T>) -> bool
+    fn delta_associative(a: LWWRegister<K>, b: LWWRegister<K>, c: LWWRegister<K>) -> bool
     where
-        LWWRegister<T>: Delta,
+        LWWRegister<K>: Delta,
     {
-        let mut a_b = a.clone();
-        a_b.apply_delta(&b);
-        let mut b_c = b.clone();
-        b_c.apply_delta(&c);
-        a_b.apply_delta(&c) == a.clone().apply_delta(&b_c)
+        todo!();
     }
 
-    fn delta_commutative(a: LWWRegister<T>, b: LWWRegister<T>) -> bool
+    fn delta_commutative(a: LWWRegister<K>, b: LWWRegister<K>) -> bool
     where
-        LWWRegister<T>: Delta,
+        LWWRegister<K>: Delta,
     {
-        a.clone().apply_delta(&b) == b.clone().apply_delta(&a)
+        todo!();
     }
 
-    fn delta_idempotent(a: LWWRegister<T>) -> bool
+    fn delta_idempotent(a: LWWRegister<K>) -> bool
     where
-        LWWRegister<T>: Delta,
+        LWWRegister<K>: Delta,
     {
-        a.clone().apply_delta(&a) == a.clone()
+        todo!();
     }
 }
 
