@@ -5,7 +5,7 @@ use crate::{
 use std::collections::HashMap;
 use std::hash::Hash;
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GCounter<K>
 where
     K: Eq + Hash + Clone,
@@ -14,7 +14,7 @@ where
 }
 
 pub enum Operation<K> {
-    Increment { key: K },
+    Increment { key: K, value: u64 },
 }
 
 impl<K> GCounter<K>
@@ -44,7 +44,10 @@ where
 
     fn apply(&mut self, op: Self::Op) {
         match op {
-            Self::Op::Increment { key } => self.increment(key),
+            Self::Op::Increment { key, value } => {
+                let current_count = self.counter.entry(key.clone()).or_insert(0);
+                *current_count = (*current_count).max(value);
+            }
         }
     }
 }
@@ -54,9 +57,9 @@ where
     K: Eq + Hash + Clone,
 {
     fn merge(&mut self, other: &Self) {
-        for (replica, &count) in &other.counter {
-            let current_count = self.counter.entry(replica.clone()).or_insert(0);
-            *current_count = (*current_count).max(count);
+        for (k, v) in &other.counter {
+            let current_count = self.counter.entry(k.clone()).or_insert(0);
+            *current_count = (*current_count).max(*v);
         }
     }
 }
@@ -66,15 +69,9 @@ where
     K: Eq + Hash + Clone,
 {
     fn generate_delta(&self, since: &Self) -> Self {
-        let mut delta = GCounter::new();
-        for (replica, &count) in &self.counter {
-            let since_count = *since.counter.get(replica).unwrap_or(&0);
-            if count > since_count {
-                delta.counter.insert(replica.clone(), count - since_count);
-            }
-        }
-        delta
+        todo!();
     }
+
     fn apply_delta(&mut self, delta: &Self) {
         self.merge(delta);
     }
@@ -82,7 +79,7 @@ where
 
 impl<K> Semilattice<GCounter<K>> for GCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + std::fmt::Debug,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;
@@ -93,24 +90,31 @@ where
     {
         let mut ab_c = a.clone();
         let mut bc = b.clone();
-
-        if let Some(k) = b.counter.keys().next() {
-            ab_c.apply(Self::Op::Increment { key: k.clone() });
+        if let Some((k, v)) = b.counter.iter().next() {
+            ab_c.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
         }
-
-        if let Some(k) = c.counter.keys().next() {
-            bc.apply(Self::Op::Increment { key: k.clone() });
+        if let Some((k, v)) = c.counter.iter().next() {
+            bc.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
         }
-
-        if let Some(k) = c.counter.keys().next() {
-            ab_c.apply(Self::Op::Increment { key: k.clone() });
+        if let Some((k, v)) = c.counter.iter().next() {
+            ab_c.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
         }
-
         let mut a_bc = a.clone();
-        if let Some(k) = bc.counter.keys().next() {
-            a_bc.apply(Self::Op::Increment { key: k.clone() });
+        for (k, v) in bc.counter.iter() {
+            a_bc.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
         }
-
         ab_c.value() == a_bc.value()
     }
 
@@ -120,11 +124,17 @@ where
     {
         let mut ab = a.clone();
         let mut ba = b.clone();
-        if let Some(k) = b.counter.keys().next() {
-            ab.apply(Self::Op::Increment { key: k.clone() });
+        if let Some((k, v)) = b.counter.iter().next() {
+            ab.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
         }
-        if let Some(k) = a.counter.keys().next() {
-            ba.apply(Self::Op::Increment { key: k.clone() });
+        if let Some((k, v)) = a.counter.iter().next() {
+            ba.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
         }
         ab.value() == ba.value()
     }
@@ -133,24 +143,41 @@ where
     where
         GCounter<K>: CmRDT,
     {
-        let mut a1 = a.clone();
-        if let Some(k) = a.counter.keys().next() {
-            a1.apply(Operation::Increment { key: k.clone() });
+        let mut once = a.clone();
+        let mut twice = a.clone();
+        if let Some((k, v)) = a.counter.iter().next() {
+            once.apply(Operation::Increment {
+                key: k.clone(),
+                value: *v,
+            });
         }
-        a1.value() == a.value()
+        if let Some((k, v)) = a.counter.iter().next() {
+            twice.apply(Operation::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = a.counter.iter().next() {
+            twice.apply(Operation::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        once.value() == twice.value()
     }
 
     fn cvrdt_associative(a: GCounter<K>, b: GCounter<K>, c: GCounter<K>) -> bool
     where
         GCounter<K>: CvRDT,
     {
-        let mut a_b = a.clone();
-        a_b.merge(&b);
-        let mut b_c = b.clone();
-        b_c.merge(&c);
-        a_b.merge(&c);
-        a.clone().merge(&b_c);
-        a_b.value() == a.value()
+        let mut ab_c = a.clone();
+        let mut bc = b.clone();
+        ab_c.merge(&b);
+        bc.merge(&c);
+        ab_c.merge(&c);
+        let mut a_bc = a.clone();
+        a_bc.merge(&bc);
+        ab_c.value() == a_bc.value()
     }
 
     fn cvrdt_commutative(a: GCounter<K>, b: GCounter<K>) -> bool
@@ -166,21 +193,26 @@ where
     where
         GCounter<K>: CvRDT,
     {
-        a.clone().merge(&a);
-        a.value() == a.value()
+        let mut once = a.clone();
+        let mut twice = a.clone();
+        once.merge(&a);
+        twice.merge(&a);
+        twice.merge(&a);
+        once.value() == twice.value()
     }
 
     fn delta_associative(a: GCounter<K>, b: GCounter<K>, c: GCounter<K>) -> bool
     where
         GCounter<K>: Delta,
     {
-        let mut a_b = a.clone();
-        a_b.apply_delta(&b);
-        let mut b_c = b.clone();
-        b_c.apply_delta(&c);
-        a_b.apply_delta(&c);
-        a.clone().apply_delta(&b_c);
-        a_b.value() == a.value()
+        let mut ab_c = a.clone();
+        let mut bc = b.clone();
+        ab_c.apply_delta(&b);
+        bc.apply_delta(&c);
+        ab_c.apply_delta(&c);
+        let mut a_bc = a.clone();
+        a_bc.apply_delta(&bc);
+        ab_c.value() == a_bc.value()
     }
 
     fn delta_commutative(a: GCounter<K>, b: GCounter<K>) -> bool
@@ -196,8 +228,12 @@ where
     where
         GCounter<K>: Delta,
     {
-        a.clone().apply_delta(&a);
-        a.value() == a.value()
+        let mut once = a.clone();
+        let mut twice = a.clone();
+        once.apply_delta(&a);
+        twice.apply_delta(&a);
+        twice.apply_delta(&a);
+        once.value() == twice.value()
     }
 }
 

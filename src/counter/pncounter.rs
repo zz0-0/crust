@@ -13,8 +13,8 @@ where
 }
 
 pub enum Operation<K> {
-    Increment { key: K },
-    Decrement { key: K },
+    Increment { key: K, value: u64 },
+    Decrement { key: K, value: u64 },
 }
 
 impl<K> PNCounter<K>
@@ -49,7 +49,16 @@ where
 {
     type Op = Operation<K>;
     fn apply(&mut self, op: Self::Op) {
-        todo!();
+        match op {
+            Self::Op::Increment { key, value } => {
+                let current_count = self.p.entry(key.clone()).or_insert(0);
+                *current_count = (*current_count).max(value);
+            }
+            Self::Op::Decrement { key, value } => {
+                let current_count = self.n.entry(key.clone()).or_insert(0);
+                *current_count = (*current_count).max(value);
+            }
+        }
     }
 }
 
@@ -58,13 +67,13 @@ where
     K: Eq + Hash + Clone,
 {
     fn merge(&mut self, other: &Self) {
-        for (replica, &count) in &other.p {
-            let current_count = *self.p.entry(replica.clone()).or_insert(0);
-            self.p.insert(replica.clone(), current_count.max(count));
+        for (k, v) in &other.p {
+            let current_count = self.p.entry(k.clone()).or_insert(0);
+            *current_count = (*current_count).max(*v);
         }
-        for (replica, &count) in &other.n {
-            let current_count = *self.n.entry(replica.clone()).or_insert(0);
-            self.n.insert(replica.clone(), current_count.max(count));
+        for (k, v) in &other.n {
+            let current_count = self.n.entry(k.clone()).or_insert(0);
+            *current_count = (*current_count).max(*v);
         }
     }
 }
@@ -74,24 +83,7 @@ where
     K: Eq + Hash + Clone,
 {
     fn generate_delta(&self, since: &Self) -> Self {
-        let mut p_delta = HashMap::new();
-        let mut n_delta = HashMap::new();
-        for (replica, &count) in &self.p {
-            let since_count = *since.p.get(replica).unwrap_or(&0);
-            if count > since_count {
-                p_delta.insert(replica.clone(), count - since_count);
-            }
-        }
-        for (replica, &count) in &self.n {
-            let since_count = *since.n.get(replica).unwrap_or(&0);
-            if count > since_count {
-                n_delta.insert(replica.clone(), count - since_count);
-            }
-        }
-        PNCounter {
-            p: p_delta,
-            n: n_delta,
-        }
+        todo!();
     }
 
     fn apply_delta(&mut self, other: &Self) {
@@ -110,34 +102,150 @@ where
     where
         PNCounter<K>: CmRDT,
     {
-        todo!();
+        let mut ab_c = a.clone();
+        let mut bc = b.clone();
+        if let Some((k, v)) = b.p.iter().next() {
+            ab_c.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = b.n.iter().next() {
+            ab_c.apply(Self::Op::Decrement {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = c.p.iter().next() {
+            bc.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = c.n.iter().next() {
+            bc.apply(Self::Op::Decrement {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = c.p.iter().next() {
+            ab_c.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = c.n.iter().next() {
+            ab_c.apply(Self::Op::Decrement {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        let mut a_bc = a.clone();
+        for (k, v) in bc.p.iter() {
+            a_bc.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        for (k, v) in bc.n.iter() {
+            a_bc.apply(Self::Op::Decrement {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        ab_c.value() == a_bc.value()
     }
 
     fn cmrdt_commutative(a: PNCounter<K>, b: PNCounter<K>) -> bool
     where
         PNCounter<K>: CmRDT,
     {
-        todo!();
+        let mut ab = a.clone();
+        let mut ba = b.clone();
+        if let Some((k, v)) = b.p.iter().next() {
+            ab.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = b.n.iter().next() {
+            ab.apply(Self::Op::Decrement {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = a.p.iter().next() {
+            ba.apply(Self::Op::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = a.n.iter().next() {
+            ba.apply(Self::Op::Decrement {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        ab.value() == ba.value()
     }
 
     fn cmrdt_idempotent(a: PNCounter<K>) -> bool
     where
         PNCounter<K>: CmRDT,
     {
-        todo!();
+        let mut once = a.clone();
+        let mut twice = a.clone();
+        if let Some((k, v)) = a.p.iter().next() {
+            once.apply(Operation::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = a.n.iter().next() {
+            once.apply(Operation::Decrement {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = a.p.iter().next() {
+            twice.apply(Operation::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = a.p.iter().next() {
+            twice.apply(Operation::Increment {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = a.n.iter().next() {
+            twice.apply(Operation::Decrement {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        if let Some((k, v)) = a.n.iter().next() {
+            twice.apply(Operation::Decrement {
+                key: k.clone(),
+                value: *v,
+            });
+        }
+        once.value() == twice.value()
     }
 
     fn cvrdt_associative(a: PNCounter<K>, b: PNCounter<K>, c: PNCounter<K>) -> bool
     where
         PNCounter<K>: CvRDT,
     {
-        let mut a_b = a.clone();
-        a_b.merge(&b);
-        let mut b_c = b.clone();
-        b_c.merge(&c);
-        a_b.merge(&c);
-        a.clone().merge(&b_c);
-        a_b.value() == a.value()
+        let mut ab_c = a.clone();
+        let mut bc = b.clone();
+        ab_c.merge(&b);
+        bc.merge(&c);
+        ab_c.merge(&c);
+        let mut a_bc = a.clone();
+        a_bc.merge(&bc);
+        ab_c.value() == a_bc.value()
     }
 
     fn cvrdt_commutative(a: PNCounter<K>, b: PNCounter<K>) -> bool
@@ -153,21 +261,26 @@ where
     where
         PNCounter<K>: CvRDT,
     {
-        a.clone().merge(&a);
-        a.value() == a.value()
+        let mut once = a.clone();
+        let mut twice = a.clone();
+        once.merge(&a);
+        twice.merge(&a);
+        twice.merge(&a);
+        once.value() == twice.value()
     }
 
     fn delta_associative(a: PNCounter<K>, b: PNCounter<K>, c: PNCounter<K>) -> bool
     where
         PNCounter<K>: Delta,
     {
-        let mut a_b = a.clone();
-        a_b.apply_delta(&b);
-        let mut b_c = b.clone();
-        b_c.apply_delta(&c);
-        a_b.apply_delta(&c);
-        a.clone().apply_delta(&b_c);
-        a_b.value() == a.value()
+        let mut ab_c = a.clone();
+        let mut bc = b.clone();
+        ab_c.apply_delta(&b);
+        bc.apply_delta(&c);
+        ab_c.apply_delta(&c);
+        let mut a_bc = a.clone();
+        a_bc.apply_delta(&bc);
+        ab_c.value() == a_bc.value()
     }
 
     fn delta_commutative(a: PNCounter<K>, b: PNCounter<K>) -> bool
@@ -183,8 +296,12 @@ where
     where
         PNCounter<K>: Delta,
     {
-        a.clone().apply_delta(&a);
-        a.value() == a.value()
+        let mut once = a.clone();
+        let mut twice = a.clone();
+        once.apply_delta(&a);
+        twice.apply_delta(&a);
+        twice.apply_delta(&a);
+        once.value() == twice.value()
     }
 }
 
@@ -194,9 +311,9 @@ mod tests {
 
     #[test]
     fn test_semilattice() {
-        let mut a = PNCounter::new();
-        let mut b = PNCounter::new();
-        let mut c = PNCounter::new();
+        let a = PNCounter::new();
+        let b = PNCounter::new();
+        let c = PNCounter::new();
         assert!(PNCounter::<i32>::cmrdt_associative(
             a.clone(),
             b.clone(),
