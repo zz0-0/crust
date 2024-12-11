@@ -42,7 +42,9 @@ where
     }
 
     pub fn add_edge(&mut self, from: K, to: K) {
-        self.edges.insert((from.clone(), to.clone()));
+        if self.vertices.contains(&from.clone()) && self.vertices.contains(&to.clone()) {
+            self.edges.insert((from.clone(), to.clone()));
+        }
     }
 }
 
@@ -140,8 +142,6 @@ where
                 to: to.clone(),
             });
         }
-        println!("{:?}", ab_c.value());
-        println!("{:?}", a_bc.value());
         ab_c.value() == a_bc.value()
     }
 
@@ -151,26 +151,24 @@ where
     {
         let mut ab = a.clone();
         let mut ba = b.clone();
-        if let Some(k) = b.vertices.iter().next() {
-            ab.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in b.vertices.iter() {
+            ab.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = b.edges.iter().next() {
+        for (from, to) in b.edges.iter() {
             ab.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        if let Some(k) = a.vertices.iter().next() {
-            ba.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in a.vertices.iter() {
+            ba.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = a.edges.iter().next() {
+        for (from, to) in a.edges.iter() {
             ba.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        println!("{:?}", ab.value());
-        println!("{:?}", ba.value());
         ab.value() == ba.value()
     }
 
@@ -180,28 +178,29 @@ where
     {
         let mut once = a.clone();
         let mut twice = a.clone();
-        if let Some(k) = a.vertices.iter().next() {
-            once.apply(Operation::AddVertex { vertex: k.clone() });
+
+        for v in a.vertices.iter() {
+            once.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = a.edges.iter().next() {
+        for (from, to) in a.edges.iter() {
             once.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        if let Some(k) = a.vertices.iter().next() {
-            twice.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in a.vertices.iter() {
+            twice.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = a.edges.iter().next() {
+        for (from, to) in a.edges.iter() {
             twice.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        if let Some(k) = a.vertices.iter().next() {
-            twice.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in a.vertices.iter() {
+            twice.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = a.edges.iter().next() {
+        for (from, to) in a.edges.iter() {
             twice.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),

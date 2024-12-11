@@ -102,28 +102,28 @@ where
     {
         let mut ab_c = a.clone();
         let mut bc = b.clone();
-        if let Some(k) = b.vertices.iter().next() {
-            ab_c.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in b.vertices.iter() {
+            ab_c.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = b.edges.iter().next() {
+        for (from, to) in b.edges.iter() {
             ab_c.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        if let Some(k) = c.vertices.iter().next() {
-            bc.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in c.vertices.iter() {
+            bc.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = c.edges.iter().next() {
+        for (from, to) in c.edges.iter() {
             bc.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        if let Some(k) = c.vertices.iter().next() {
-            ab_c.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in bc.vertices.iter() {
+            ab_c.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = c.edges.iter().next() {
+        for (from, to) in bc.edges.iter() {
             ab_c.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
@@ -148,19 +148,19 @@ where
     {
         let mut ab = a.clone();
         let mut ba = b.clone();
-        if let Some(k) = b.vertices.iter().next() {
-            ab.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in b.vertices.iter() {
+            ab.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = b.edges.iter().next() {
+        for (from, to) in b.edges.iter() {
             ab.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        if let Some(k) = a.vertices.iter().next() {
-            ba.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in a.vertices.iter() {
+            ba.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = a.edges.iter().next() {
+        for (from, to) in a.edges.iter() {
             ba.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
@@ -175,28 +175,29 @@ where
     {
         let mut once = a.clone();
         let mut twice = a.clone();
-        if let Some(k) = a.vertices.iter().next() {
-            once.apply(Operation::AddVertex { vertex: k.clone() });
+
+        for v in a.vertices.iter() {
+            once.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = a.edges.iter().next() {
+        for (from, to) in a.edges.iter() {
             once.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        if let Some(k) = a.vertices.iter().next() {
-            twice.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in a.vertices.iter() {
+            twice.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = a.edges.iter().next() {
+        for (from, to) in a.edges.iter() {
             twice.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        if let Some(k) = a.vertices.iter().next() {
-            twice.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in a.vertices.iter() {
+            twice.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = a.edges.iter().next() {
+        for (from, to) in a.edges.iter() {
             twice.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
@@ -246,21 +247,37 @@ where
     where
         ORGraph<K>: Delta,
     {
-        todo!();
+        let mut ab_c = a.clone();
+        let mut bc = b.clone();
+        ab_c.apply_delta(&b);
+        bc.apply_delta(&c);
+        ab_c.apply_delta(&c);
+        let mut a_bc = a.clone();
+        a_bc.apply_delta(&bc);
+        ab_c.value() == a_bc.value()
     }
 
     fn delta_commutative(a: ORGraph<K>, b: ORGraph<K>) -> bool
     where
         ORGraph<K>: Delta,
     {
-        todo!();
+        let mut ab = a.clone();
+        let mut ba = b.clone();
+        ab.apply_delta(&b);
+        ba.apply_delta(&a);
+        ab.value() == ba.value()
     }
 
     fn delta_idempotent(a: ORGraph<K>) -> bool
     where
         ORGraph<K>: Delta,
     {
-        todo!();
+        let mut once = a.clone();
+        let mut twice = a.clone();
+        once.apply_delta(&a);
+        twice.apply_delta(&a);
+        twice.apply_delta(&a);
+        once.value() == twice.value()
     }
 }
 
@@ -288,8 +305,8 @@ mod tests {
         assert!(ORGraph::cvrdt_associative(a.clone(), b.clone(), c.clone()));
         assert!(ORGraph::cvrdt_commutative(a.clone(), b.clone()));
         assert!(ORGraph::cvrdt_idempotent(a.clone()));
-        // assert!(ORGraph::delta_associative(a.clone(), b.clone(), c.clone()));
-        // assert!(ORGraph::delta_commutative(a.clone(), b.clone()));
-        // assert!(ORGraph::delta_idempotent(a.clone()));
+        assert!(ORGraph::delta_associative(a.clone(), b.clone(), c.clone()));
+        assert!(ORGraph::delta_commutative(a.clone(), b.clone()));
+        assert!(ORGraph::delta_idempotent(a.clone()));
     }
 }
