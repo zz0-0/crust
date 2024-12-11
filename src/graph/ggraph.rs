@@ -2,10 +2,7 @@ use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
 };
-use std::{
-    collections::{HashMap, HashSet},
-    hash::Hash,
-};
+use std::{collections::HashSet, hash::Hash};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GGraph<K>
@@ -45,9 +42,7 @@ where
     }
 
     pub fn add_edge(&mut self, from: K, to: K) {
-        if self.vertices.contains(&from.clone()) && self.vertices.contains(&to.clone()) {
-            self.edges.insert((from.clone(), to.clone()));
-        }
+        self.edges.insert((from.clone(), to.clone()));
     }
 }
 
@@ -63,9 +58,7 @@ where
                 self.add_vertex(vertex);
             }
             Operation::AddEdge { from, to } => {
-                if self.vertices.contains(&from) && self.vertices.contains(&to) {
-                    self.edges.insert((from, to));
-                }
+                self.add_edge(from, to);
             }
         }
     }
@@ -110,28 +103,28 @@ where
     {
         let mut ab_c = a.clone();
         let mut bc = b.clone();
-        if let Some(k) = b.vertices.iter().next() {
-            ab_c.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in b.vertices.iter() {
+            ab_c.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = b.edges.iter().next() {
+        for (from, to) in b.edges.iter() {
             ab_c.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        if let Some(k) = c.vertices.iter().next() {
-            bc.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in c.vertices.iter() {
+            bc.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = c.edges.iter().next() {
+        for (from, to) in c.edges.iter() {
             bc.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        if let Some(k) = c.vertices.iter().next() {
-            ab_c.apply(Operation::AddVertex { vertex: k.clone() });
+        for v in bc.vertices.iter() {
+            ab_c.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        if let Some((from, to)) = c.edges.iter().next() {
+        for (from, to) in bc.edges.iter() {
             ab_c.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
@@ -176,6 +169,8 @@ where
                 to: to.clone(),
             });
         }
+        println!("{:?}", ab.value());
+        println!("{:?}", ba.value());
         ab.value() == ba.value()
     }
 
