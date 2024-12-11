@@ -4,7 +4,7 @@ use crate::{
 };
 use std::collections::BTreeSet;
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GSet<K: Ord + Clone> {
     set: BTreeSet<K>,
 }

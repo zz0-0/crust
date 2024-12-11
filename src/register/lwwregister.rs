@@ -4,7 +4,7 @@ use crate::{
 };
 use core::time;
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LWWRegister<K>
 where
     K: Clone,

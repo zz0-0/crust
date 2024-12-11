@@ -184,9 +184,11 @@ where
     where
         GCounter<K>: CvRDT,
     {
-        a.clone().merge(&b);
-        b.clone().merge(&a);
-        a.value() == b.value()
+        let mut ab = a.clone();
+        let mut ba = b.clone();
+        ab.merge(&b);
+        ba.merge(&a);
+        ab.value() == ba.value()
     }
 
     fn cvrdt_idempotent(a: GCounter<K>) -> bool
@@ -219,9 +221,11 @@ where
     where
         GCounter<K>: Delta,
     {
-        a.clone().apply_delta(&b);
-        b.clone().apply_delta(&a);
-        a.value() == b.value()
+        let mut ab = a.clone();
+        let mut ba = b.clone();
+        ab.apply_delta(&b);
+        ba.apply_delta(&a);
+        ab.value() == ba.value()
     }
 
     fn delta_idempotent(a: GCounter<K>) -> bool

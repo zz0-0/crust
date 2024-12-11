@@ -3,7 +3,7 @@ use crate::{
     crdt_type::{CmRDT, CvRDT, Delta},
 };
 use std::{collections::HashMap, hash::Hash};
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PNCounter<K>
 where
     K: Eq + Hash + Clone,
@@ -93,7 +93,7 @@ where
 
 impl<K> Semilattice<PNCounter<K>> for PNCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + std::fmt::Debug,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;
@@ -252,9 +252,11 @@ where
     where
         PNCounter<K>: CvRDT,
     {
-        a.clone().merge(&b);
-        b.clone().merge(&a);
-        a.value() == b.value()
+        let mut ab = a.clone();
+        let mut ba = b.clone();
+        ab.merge(&b);
+        ba.merge(&a);
+        ab.value() == ba.value()
     }
 
     fn cvrdt_idempotent(a: PNCounter<K>) -> bool
@@ -287,9 +289,11 @@ where
     where
         PNCounter<K>: Delta,
     {
-        a.clone().apply_delta(&b);
-        b.clone().apply_delta(&a);
-        a.value() == b.value()
+        let mut ab = a.clone();
+        let mut ba = b.clone();
+        ab.apply_delta(&b);
+        ba.apply_delta(&a);
+        ab.value() == ba.value()
     }
 
     fn delta_idempotent(a: PNCounter<K>) -> bool

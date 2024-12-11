@@ -4,7 +4,7 @@ use crate::{
 };
 use std::{collections::HashSet, hash::Hash};
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MVRegister<K>
 where
     K: Eq + Hash + Clone,
@@ -90,7 +90,7 @@ where
 
 impl<K> Semilattice<MVRegister<K>> for MVRegister<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + std::fmt::Debug,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;
