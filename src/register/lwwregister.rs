@@ -2,7 +2,7 @@ use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
 };
-use core::time;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct LWWRegister<K>
@@ -10,11 +10,11 @@ where
     K: Clone,
 {
     value: Option<K>,
-    timestamp: u64,
+    timestamp: u128,
 }
 
 pub enum Operation<K> {
-    Set(K, u64),
+    Set(K, u128),
 }
 
 impl<K> LWWRegister<K>
@@ -27,6 +27,24 @@ where
             timestamp: 0,
         }
     }
+
+    pub fn read(&self) -> Option<K> {
+        self.value.clone()
+    }
+
+    pub fn set(value: K) -> Self {
+        LWWRegister {
+            value: Some(value),
+            timestamp: get_current_timestamp(),
+        }
+    }
+}
+
+fn get_current_timestamp() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_millis()
 }
 
 impl<K> CmRDT for LWWRegister<K>
@@ -36,7 +54,14 @@ where
     type Op = Operation<K>;
 
     fn apply(&mut self, op: Self::Op) {
-        todo!();
+        match op {
+            Operation::Set(value, timestamp) => {
+                self.merge(&LWWRegister {
+                    value: Some(value),
+                    timestamp,
+                });
+            }
+        }
     }
 }
 
@@ -45,9 +70,15 @@ where
     K: Clone,
 {
     fn merge(&mut self, other: &Self) {
-        if other.timestamp > self.timestamp {
-            self.value = other.value.clone();
-            self.timestamp = other.timestamp;
+        match self.timestamp.cmp(&other.timestamp) {
+            std::cmp::Ordering::Less => {
+                self.value = other.value.clone();
+                self.timestamp = other.timestamp;
+            }
+            std::cmp::Ordering::Equal => {
+                self.value = other.value.clone();
+            }
+            _ => {}
         }
     }
 }
@@ -61,10 +92,7 @@ where
     }
 
     fn apply_delta(&mut self, other: &Self) {
-        if other.timestamp > self.timestamp {
-            self.value = other.value.clone();
-            self.timestamp = other.timestamp;
-        }
+        self.merge(other);
     }
 }
 

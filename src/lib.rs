@@ -5,3 +5,4 @@ mod graph;
 mod map;
 mod register;
 mod set;
+mod text_operation;

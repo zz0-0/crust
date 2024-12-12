@@ -1,3 +1,5 @@
+use vclock::VClock;
+
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
@@ -9,11 +11,11 @@ pub struct MVRegister<K>
 where
     K: Eq + Hash + Clone,
 {
-    values: HashSet<(K, u64)>,
+    values: HashSet<(K, Vec<usize>)>,
 }
 
 pub enum Operation<K> {
-    Write { value: K, timestamp: u64 },
+    Write { value: K, vector_clock: Vec<usize> },
 }
 
 impl<K> MVRegister<K>
@@ -26,13 +28,8 @@ where
         }
     }
 
-    pub fn write(&mut self, value: K, timestamp: u64) {
-        self.values.clear();
-        self.values.insert((value, timestamp));
-    }
-
-    pub fn timestamps(&self) -> Vec<u64> {
-        self.values.iter().map(|(_, ts)| *ts).collect()
+    pub fn write(&mut self, value: K, vector_clock: Vec<usize>) {
+        self.values.insert((value, vector_clock));
     }
 }
 
@@ -52,18 +49,7 @@ where
     K: Eq + Hash + Clone,
 {
     fn merge(&mut self, other: &Self) {
-        let max_timestamp = self
-            .values
-            .iter()
-            .chain(other.values.iter())
-            .map(|(_, timestamp)| *timestamp)
-            .max()
-            .unwrap_or(0);
-        self.values
-            .retain(|(_, timestamp)| *timestamp == max_timestamp);
-        other.values.iter().for_each(|(value, timestamp)| {
-            self.values.insert((value.clone(), *timestamp));
-        });
+        todo!();
     }
 }
 
@@ -72,15 +58,7 @@ where
     K: Eq + Hash + Clone,
 {
     fn generate_delta(&self, since: &Self) -> Self {
-        let since_max = since.timestamps().into_iter().max().unwrap_or(0);
-        MVRegister {
-            values: self
-                .values
-                .iter()
-                .filter(|(_, ts)| *ts > since_max)
-                .cloned()
-                .collect(),
-        }
+        todo!();
     }
 
     fn apply_delta(&mut self, other: &Self) {

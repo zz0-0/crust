@@ -9,13 +9,17 @@ pub struct ORGraph<K>
 where
     K: Hash + Eq + Clone + Ord,
 {
-    vertices: HashSet<K>,
-    edges: HashSet<(K, K)>,
+    added_vertices: HashSet<K>,
+    removed_vertices: HashSet<K>,
+    added_edges: HashSet<(K, K)>,
+    removed_edges: HashSet<(K, K)>,
 }
 
 pub enum Operation<K> {
     AddVertex { vertex: K },
     AddEdge { from: K, to: K },
+    RemoveVertex { vertex: K },
+    RemoveEdge { from: K, to: K },
 }
 
 impl<K> ORGraph<K>
@@ -24,27 +28,42 @@ where
 {
     pub fn new() -> Self {
         ORGraph {
-            vertices: HashSet::new(),
-            edges: HashSet::new(),
+            added_vertices: HashSet::new(),
+            removed_vertices: HashSet::new(),
+            added_edges: HashSet::new(),
+            removed_edges: HashSet::new(),
         }
     }
 
-    pub fn value(&self) -> (Vec<K>, Vec<(K, K)>) {
-        let mut vertices: Vec<K> = self.vertices.iter().cloned().collect();
-        let mut edges: Vec<(K, K)> = self.edges.iter().cloned().collect();
-        vertices.sort();
-        edges.sort();
-        (vertices, edges)
+    pub fn value(&self) -> (Vec<K>, Vec<(K, K)>, Vec<K>, Vec<(K, K)>) {
+        let mut added_vertices: Vec<K> = self.added_vertices.iter().cloned().collect();
+        let mut removed_vertices: Vec<K> = self.removed_vertices.iter().cloned().collect();
+        let mut added_edges: Vec<(K, K)> = self.added_edges.iter().cloned().collect();
+        let mut removed_edges: Vec<(K, K)> = self.removed_edges.iter().cloned().collect();
+        added_vertices.sort();
+        removed_vertices.sort();
+        added_edges.sort();
+        removed_edges.sort();
+        (added_vertices, added_edges, removed_vertices, removed_edges)
     }
 
     pub fn add_vertex(&mut self, vertex: K) {
-        self.vertices.insert(vertex);
+        self.added_vertices.insert(vertex);
     }
 
     pub fn add_edge(&mut self, from: K, to: K) {
-        if self.vertices.contains(&from.clone()) && self.vertices.contains(&to.clone()) {
-            self.edges.insert((from.clone(), to.clone()));
+        if self.added_vertices.contains(&from.clone()) && self.added_vertices.contains(&to.clone())
+        {
+            self.added_edges.insert((from.clone(), to.clone()));
         }
+    }
+
+    pub fn remove_vertex(&mut self, vertex: K) {
+        self.removed_vertices.remove(&vertex);
+    }
+
+    pub fn remove_edge(&mut self, from: K, to: K) {
+        self.removed_edges.remove(&(from, to));
     }
 }
 
@@ -62,6 +81,12 @@ where
             Operation::AddEdge { from, to } => {
                 self.add_edge(from, to);
             }
+            Operation::RemoveVertex { vertex } => {
+                self.remove_vertex(vertex);
+            }
+            Operation::RemoveEdge { from, to } => {
+                self.remove_edge(from, to);
+            }
         }
     }
 }
@@ -71,8 +96,14 @@ where
     K: Hash + Eq + Clone + Ord,
 {
     fn merge(&mut self, other: &Self) {
-        self.vertices.extend(other.vertices.clone());
-        self.edges.extend(other.edges.clone());
+        self.added_vertices.extend(other.added_vertices.clone());
+        self.removed_vertices.extend(other.removed_vertices.clone());
+        self.added_edges.extend(other.added_edges.clone());
+        self.removed_edges.extend(other.removed_edges.clone());
+        self.added_vertices
+            .retain(|v| !self.removed_vertices.contains(v));
+        self.added_edges
+            .retain(|(from, to)| !self.removed_edges.contains(&(from.clone(), to.clone())));
     }
 }
 
@@ -81,11 +112,32 @@ where
     K: Hash + Eq + Clone + Ord,
 {
     fn generate_delta(&self, since: &Self) -> Self {
-        todo!();
+        Self {
+            added_vertices: self
+                .added_vertices
+                .difference(&since.added_vertices)
+                .cloned()
+                .collect(),
+            removed_vertices: self
+                .removed_vertices
+                .difference(&since.removed_vertices)
+                .cloned()
+                .collect(),
+            added_edges: self
+                .added_edges
+                .difference(&since.added_edges)
+                .cloned()
+                .collect(),
+            removed_edges: self
+                .removed_edges
+                .difference(&since.removed_edges)
+                .cloned()
+                .collect(),
+        }
     }
 
     fn apply_delta(&mut self, other: &Self) {
-        todo!();
+        self.merge(other);
     }
 }
 
@@ -102,39 +154,75 @@ where
     {
         let mut ab_c = a.clone();
         let mut bc = b.clone();
-        for v in b.vertices.iter() {
+        for v in b.added_vertices.iter() {
             ab_c.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        for (from, to) in b.edges.iter() {
+        for (from, to) in b.added_edges.iter() {
             ab_c.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        for v in c.vertices.iter() {
+        for v in b.removed_vertices.iter() {
+            ab_c.apply(Operation::RemoveVertex { vertex: v.clone() });
+        }
+        for (from, to) in b.removed_edges.iter() {
+            ab_c.apply(Operation::RemoveEdge {
+                from: from.clone(),
+                to: to.clone(),
+            });
+        }
+        for v in c.added_vertices.iter() {
             bc.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        for (from, to) in c.edges.iter() {
+        for (from, to) in c.added_edges.iter() {
             bc.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        for v in bc.vertices.iter() {
+        for v in c.removed_vertices.iter() {
+            bc.apply(Operation::RemoveVertex { vertex: v.clone() });
+        }
+        for (from, to) in c.removed_edges.iter() {
+            bc.apply(Operation::RemoveEdge {
+                from: from.clone(),
+                to: to.clone(),
+            });
+        }
+        for v in bc.added_vertices.iter() {
             ab_c.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        for (from, to) in bc.edges.iter() {
+        for (from, to) in bc.added_edges.iter() {
             ab_c.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
+        for v in bc.removed_vertices.iter() {
+            ab_c.apply(Operation::RemoveVertex { vertex: v.clone() });
+        }
+        for (from, to) in bc.removed_edges.iter() {
+            ab_c.apply(Operation::RemoveEdge {
+                from: from.clone(),
+                to: to.clone(),
+            });
+        }
         let mut a_bc = a.clone();
-        for v in bc.vertices.iter() {
+        for v in bc.added_vertices.iter() {
             a_bc.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        for (from, to) in bc.edges.iter() {
+        for (from, to) in bc.added_edges.iter() {
             a_bc.apply(Operation::AddEdge {
+                from: from.clone(),
+                to: to.clone(),
+            });
+        }
+        for v in bc.removed_vertices.iter() {
+            a_bc.apply(Operation::RemoveVertex { vertex: v.clone() });
+        }
+        for (from, to) in bc.removed_edges.iter() {
+            a_bc.apply(Operation::RemoveEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
@@ -148,20 +236,38 @@ where
     {
         let mut ab = a.clone();
         let mut ba = b.clone();
-        for v in b.vertices.iter() {
+        for v in b.added_vertices.iter() {
             ab.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        for (from, to) in b.edges.iter() {
+        for (from, to) in b.added_edges.iter() {
             ab.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        for v in a.vertices.iter() {
+        for v in b.removed_vertices.iter() {
+            ab.apply(Operation::RemoveVertex { vertex: v.clone() });
+        }
+        for (from, to) in b.removed_edges.iter() {
+            ab.apply(Operation::RemoveEdge {
+                from: from.clone(),
+                to: to.clone(),
+            });
+        }
+        for v in a.added_vertices.iter() {
             ba.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        for (from, to) in a.edges.iter() {
+        for (from, to) in a.added_edges.iter() {
             ba.apply(Operation::AddEdge {
+                from: from.clone(),
+                to: to.clone(),
+            });
+        }
+        for v in a.removed_vertices.iter() {
+            ba.apply(Operation::RemoveVertex { vertex: v.clone() });
+        }
+        for (from, to) in a.removed_edges.iter() {
+            ba.apply(Operation::RemoveEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
@@ -176,29 +282,56 @@ where
         let mut once = a.clone();
         let mut twice = a.clone();
 
-        for v in a.vertices.iter() {
+        for v in a.added_vertices.iter() {
             once.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        for (from, to) in a.edges.iter() {
+        for (from, to) in a.added_edges.iter() {
             once.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        for v in a.vertices.iter() {
+        for v in a.removed_vertices.iter() {
+            once.apply(Operation::RemoveVertex { vertex: v.clone() });
+        }
+        for (from, to) in a.removed_edges.iter() {
+            once.apply(Operation::RemoveEdge {
+                from: from.clone(),
+                to: to.clone(),
+            });
+        }
+        for v in a.added_vertices.iter() {
             twice.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        for (from, to) in a.edges.iter() {
+        for (from, to) in a.added_edges.iter() {
             twice.apply(Operation::AddEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
         }
-        for v in a.vertices.iter() {
+        for v in a.removed_vertices.iter() {
+            twice.apply(Operation::RemoveVertex { vertex: v.clone() });
+        }
+        for (from, to) in a.removed_edges.iter() {
+            twice.apply(Operation::RemoveEdge {
+                from: from.clone(),
+                to: to.clone(),
+            });
+        }
+        for v in a.added_vertices.iter() {
             twice.apply(Operation::AddVertex { vertex: v.clone() });
         }
-        for (from, to) in a.edges.iter() {
+        for (from, to) in a.added_edges.iter() {
             twice.apply(Operation::AddEdge {
+                from: from.clone(),
+                to: to.clone(),
+            });
+        }
+        for v in a.removed_vertices.iter() {
+            twice.apply(Operation::RemoveVertex { vertex: v.clone() });
+        }
+        for (from, to) in a.removed_edges.iter() {
+            twice.apply(Operation::RemoveEdge {
                 from: from.clone(),
                 to: to.clone(),
             });
