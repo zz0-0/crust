@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crdt-node
+spec:
+  selector:
+    matchLabels:
+      app: crdt-node
+  template:
+    metadata:
+      labels:
+        app: crdt-node
+    spec:
+      containers:
+        - name: crdt-node
+          image: zz0-0/crust
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 5000
