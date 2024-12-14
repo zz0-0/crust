@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GSet<K: Ord + Clone> {
-    set: BTreeSet<K>,
+    added: BTreeSet<K>,
 }
 
 pub enum Operation<K> {
@@ -16,20 +16,20 @@ pub enum Operation<K> {
 impl<K: Ord + Clone> GSet<K> {
     pub fn new() -> Self {
         GSet {
-            set: BTreeSet::new(),
+            added: BTreeSet::new(),
         }
     }
 
     pub fn insert(&mut self, value: K) {
-        self.set.insert(value);
+        self.added.insert(value);
     }
 
     pub fn contains(&self, value: &K) -> bool {
-        self.set.contains(value)
+        self.added.contains(value)
     }
 
     pub fn read(&self) -> BTreeSet<K> {
-        self.set.clone()
+        self.added.clone()
     }
 }
 
@@ -43,23 +43,19 @@ impl<K: Ord + Clone> CmRDT for GSet<K> {
 
 impl<K: Ord + Clone> CvRDT for GSet<K> {
     fn merge(&mut self, other: &Self) {
-        self.set.extend(other.set.iter().cloned());
+        self.added.extend(other.added.iter().cloned());
     }
 }
 
 impl<K: Ord + Clone> Delta for GSet<K> {
     fn generate_delta(&self, since: &Self) -> Self {
-        let mut delta = GSet::new();
-        for element in self.set.iter() {
-            if !since.set.contains(element) {
-                delta.insert(element.clone());
-            }
+        Self {
+            added: self.added.difference(&since.added).cloned().collect(),
         }
-        delta
     }
 
     fn apply_delta(&mut self, other: &Self) {
-        self.set.extend(other.set.iter().cloned());
+        self.merge(other);
     }
 }
 

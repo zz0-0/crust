@@ -7,9 +7,11 @@ use std::collections::BTreeSet;
 #[derive(Debug, Clone, PartialEq)]
 pub struct TPSet<K>
 where
-    K: Ord,
+    K: Ord + Clone,
 {
-    set: BTreeSet<K>,
+    added: BTreeSet<K>,
+    removed: BTreeSet<K>,
+    removed_phase: BTreeSet<K>,
 }
 
 pub enum Operation<K> {
@@ -19,26 +21,30 @@ pub enum Operation<K> {
 
 impl<K> TPSet<K>
 where
-    K: Ord,
+    K: Ord + Clone,
 {
     pub fn new() -> Self {
         TPSet {
-            set: BTreeSet::new(),
+            added: BTreeSet::new(),
+            removed: BTreeSet::new(),
+            removed_phase: BTreeSet::new(),
         }
     }
 
     pub fn insert(&mut self, value: K) {
-        self.set.insert(value);
+        self.added.insert(value.clone());
+        self.removed.remove(&value.clone());
     }
 
     pub fn remove(&mut self, value: &K) {
-        self.set.remove(value);
+        self.added.remove(&value.clone());
+        self.removed.insert(value.clone());
     }
 }
 
 impl<K> CmRDT for TPSet<K>
 where
-    K: Ord,
+    K: Ord + Clone,
 {
     type Op = Operation<K>;
     fn apply(&mut self, op: Self::Op) {
@@ -48,7 +54,7 @@ where
 
 impl<K> CvRDT for TPSet<K>
 where
-    K: Ord,
+    K: Ord + Clone,
 {
     fn merge(&mut self, other: &Self) {
         todo!()
@@ -57,19 +63,27 @@ where
 
 impl<K> Delta for TPSet<K>
 where
-    K: Ord,
+    K: Ord + Clone,
 {
     fn generate_delta(&self, since: &Self) -> Self {
-        todo!()
+        Self {
+            added: self.added.difference(&since.added).cloned().collect(),
+            removed: self.removed.difference(&since.removed).cloned().collect(),
+            removed_phase: self
+                .removed_phase
+                .difference(&since.removed_phase)
+                .cloned()
+                .collect(),
+        }
     }
     fn apply_delta(&mut self, other: &Self) {
-        todo!()
+        self.merge(other);
     }
 }
 
 impl<K> Semilattice<TPSet<K>> for TPSet<K>
 where
-    K: Ord + Clone,
+    K: Ord + Clone + Clone,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;

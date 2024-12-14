@@ -9,7 +9,8 @@ pub struct AWSet<K>
 where
     K: Ord + Clone,
 {
-    set: BTreeSet<K>,
+    added: BTreeSet<K>,
+    removed: BTreeSet<K>,
 }
 
 pub enum Operation<K> {
@@ -23,20 +24,21 @@ where
 {
     pub fn new() -> Self {
         AWSet {
-            set: BTreeSet::new(),
+            added: BTreeSet::new(),
+            removed: BTreeSet::new(),
         }
     }
 
     pub fn insert(&mut self, value: K) {
-        self.set.insert(value);
+        self.added.insert(value);
     }
 
-    pub fn remove(&mut self, value: &K) {
-        self.set.remove(value);
+    pub fn remove(&mut self, value: K) {
+        self.removed.insert(value);
     }
 
     pub fn read(&self) -> BTreeSet<K> {
-        self.set.clone()
+        self.added.clone()
     }
 }
 
@@ -47,7 +49,14 @@ where
     type Op = Operation<K>;
 
     fn apply(&mut self, op: Self::Op) {
-        todo!()
+        match op {
+            Operation::Add(value) => {
+                self.insert(value);
+            }
+            Operation::Remove(value) => {
+                self.remove(value);
+            }
+        }
     }
 }
 
@@ -56,7 +65,9 @@ where
     K: Ord + Clone,
 {
     fn merge(&mut self, other: &Self) {
-        todo!()
+        self.added.extend(other.added.clone());
+        self.removed.extend(other.removed.clone());
+        self.added.retain(|k| !self.removed.contains(k));
     }
 }
 
@@ -65,11 +76,14 @@ where
     K: Ord + Clone,
 {
     fn generate_delta(&self, since: &Self) -> Self {
-        todo!()
+        Self {
+            added: self.added.difference(&since.added).cloned().collect(),
+            removed: self.removed.difference(&since.removed).cloned().collect(),
+        }
     }
 
     fn apply_delta(&mut self, other: &Self) {
-        todo!()
+        self.merge(other);
     }
 }
 

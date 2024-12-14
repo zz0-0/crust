@@ -7,9 +7,10 @@ use std::collections::BTreeSet;
 #[derive(Debug, Clone, PartialEq)]
 pub struct ORSet<K>
 where
-    K: Ord,
+    K: Ord + Clone,
 {
-    set: BTreeSet<K>,
+    added: BTreeSet<K>,
+    removed: BTreeSet<K>,
 }
 
 pub enum Operation<K> {
@@ -19,58 +20,72 @@ pub enum Operation<K> {
 
 impl<K> ORSet<K>
 where
-    K: Ord,
+    K: Ord + Clone,
 {
     pub fn new() -> Self {
         ORSet {
-            set: BTreeSet::new(),
+            added: BTreeSet::new(),
+            removed: BTreeSet::new(),
         }
     }
 
     pub fn insert(&mut self, value: K) {
-        self.set.insert(value);
+        self.added.insert(value);
     }
 
-    pub fn remove(&mut self, value: &K) {
-        self.set.remove(value);
+    pub fn remove(&mut self, value: K) {
+        self.removed.insert(value.clone());
+        self.added.remove(&value.clone());
     }
 }
 
 impl<K> CmRDT for ORSet<K>
 where
-    K: Ord,
+    K: Ord + Clone,
 {
     type Op = Operation<K>;
     fn apply(&mut self, op: Self::Op) {
-        todo!()
+        match op {
+            Operation::Add(value) => {
+                self.insert(value);
+            }
+            Operation::Remove(value) => {
+                self.remove(value);
+            }
+        }
     }
 }
 
 impl<K> CvRDT for ORSet<K>
 where
-    K: Ord,
+    K: Ord + Clone,
 {
     fn merge(&mut self, other: &Self) {
-        todo!()
+        self.added.extend(other.added.clone());
+        self.removed.extend(other.removed.clone());
+        self.added.retain(|k| !self.removed.contains(k));
     }
 }
 
 impl<K> Delta for ORSet<K>
 where
-    K: Ord,
+    K: Ord + Clone,
 {
     fn generate_delta(&self, since: &Self) -> Self {
-        todo!()
+        Self {
+            added: self.added.difference(&since.added).cloned().collect(),
+            removed: self.removed.difference(&since.removed).cloned().collect(),
+        }
     }
 
     fn apply_delta(&mut self, other: &Self) {
-        todo!()
+        self.merge(other);
     }
 }
 
 impl<K> Semilattice<ORSet<K>> for ORSet<K>
 where
-    K: Ord + Clone,
+    K: Ord + Clone + Clone,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;

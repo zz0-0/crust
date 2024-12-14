@@ -59,11 +59,11 @@ where
     }
 
     pub fn remove_vertex(&mut self, vertex: K) {
-        self.removed_vertices.remove(&vertex);
+        self.removed_vertices.insert(vertex);
     }
 
     pub fn remove_edge(&mut self, from: K, to: K) {
-        self.removed_edges.remove(&(from, to));
+        self.removed_edges.insert((from, to));
     }
 }
 
