@@ -1,22 +1,8 @@
 use crate::crdt_type::{CmRDT, CvRDT, Delta};
 
 pub enum TextOperation {
-    Insert {
-        position: usize,
-        text: String,
-    },
-    Delete {
-        position: usize,
-    },
-    SelectionDelete {
-        start: usize,
-        end: usize,
-    },
-    Replace {
-        start: usize,
-        end: usize,
-        text: String,
-    },
+    Insert { position: usize, text: String },
+    Delete { position: usize },
 }
 
 pub trait TextOperationToCmRDT: CmRDT {

@@ -1,21 +1,21 @@
-use vclock::VClock;
-
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    get_current_timestamp,
 };
+use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, hash::Hash};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MVRegister<K>
 where
     K: Eq + Hash + Clone,
 {
-    values: HashSet<(K, Vec<usize>)>,
+    values: HashSet<(K, u128)>,
 }
 
 pub enum Operation<K> {
-    Write { value: K, vector_clock: Vec<usize> },
+    Write { value: K },
 }
 
 impl<K> MVRegister<K>
@@ -23,14 +23,16 @@ where
     K: Eq + Hash + Clone,
 {
     pub fn new() -> Self {
-        MVRegister {
+        Self {
             values: HashSet::new(),
         }
     }
 
-    pub fn write(&mut self, value: K, vector_clock: Vec<usize>) {
-        self.values.insert((value, vector_clock));
+    pub fn update(&mut self, value: K) {
+        self.values.insert((value, get_current_timestamp()));
     }
+
+    pub fn values() {}
 }
 
 impl<K> CmRDT for MVRegister<K>
@@ -40,7 +42,9 @@ where
     type Op = Operation<K>;
 
     fn apply(&mut self, op: Self::Op) {
-        todo!();
+        match op {
+            Operation::Write { value } => {}
+        }
     }
 }
 
@@ -49,7 +53,11 @@ where
     K: Eq + Hash + Clone,
 {
     fn merge(&mut self, other: &Self) {
-        todo!();
+        for entry in other.values.iter() {
+            if !self.values.contains(entry) {
+                self.values.insert(entry.clone());
+            }
+        }
     }
 }
 

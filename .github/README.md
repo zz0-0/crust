@@ -40,8 +40,8 @@ Each data type will include implementations of **CmRDT**, **CvRDT**, and **Delta
 
 ### 🏗️ **Counter**
 
-- [ ] **GCounter**: Implement a grow-only counter.
-- [ ] **PNCounter**: Implement a positive-negative counter.
+- [x] **GCounter**: Implement a grow-only counter.
+- [x] **PNCounter**: Implement a positive-negative counter.
 
 ### 🧑‍🤝‍🧑 **Graph**
 

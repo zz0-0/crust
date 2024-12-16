@@ -2,9 +2,10 @@ use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
 };
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TPSet<K>
 where
     K: Ord + Clone,
@@ -24,7 +25,7 @@ where
     K: Ord + Clone,
 {
     pub fn new() -> Self {
-        TPSet {
+        Self {
             added: BTreeSet::new(),
             removed: BTreeSet::new(),
             removed_phase: BTreeSet::new(),

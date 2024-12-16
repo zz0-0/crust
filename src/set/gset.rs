@@ -2,9 +2,10 @@ use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
 };
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GSet<K: Ord + Clone> {
     added: BTreeSet<K>,
 }
@@ -15,7 +16,7 @@ pub enum Operation<K> {
 
 impl<K: Ord + Clone> GSet<K> {
     pub fn new() -> Self {
-        GSet {
+        Self {
             added: BTreeSet::new(),
         }
     }
@@ -37,7 +38,11 @@ impl<K: Ord + Clone> CmRDT for GSet<K> {
     type Op = Operation<K>;
 
     fn apply(&mut self, op: Self::Op) {
-        todo!();
+        match op {
+            Operation::Add(value) => {
+                self.insert(value);
+            }
+        }
     }
 }
 
