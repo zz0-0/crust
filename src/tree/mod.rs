@@ -1,1 +1,1 @@
-mod merkle_dag_tree;
+pub mod merkle_dag_tree;

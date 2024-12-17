@@ -1,6 +1,9 @@
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -9,7 +12,7 @@ use std::hash::Hash;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     counter: HashMap<K, u64>,
 }
@@ -20,12 +23,16 @@ pub enum Operation<K> {
 
 impl<K> GCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     pub fn new() -> Self {
         Self {
             counter: HashMap::new(),
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(&self).unwrap()
     }
 
     pub fn value(&self) -> u64 {
@@ -39,7 +46,7 @@ where
 
 impl<K> CmRDT for GCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     type Op = Operation<K>;
 
@@ -55,7 +62,7 @@ where
 
 impl<K> CvRDT for GCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn merge(&mut self, other: &Self) {
         for (k, v) in &other.counter {
@@ -67,7 +74,7 @@ where
 
 impl<K> Delta for GCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         todo!();
@@ -78,9 +85,38 @@ where
     }
 }
 
+impl<K> TextOperationToCmRDT for GCounter<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToCvRDT for GCounter<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToDelta for GCounter<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K> Semilattice<GCounter<K>> for GCounter<K>
 where
-    K: Eq + Hash + Clone + std::fmt::Debug,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;

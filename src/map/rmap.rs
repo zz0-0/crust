@@ -1,37 +1,63 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 
-struct RMap<K, V> {
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     entries: HashMap<K, (V, u128)>,
 }
 
-pub enum Operation<K, V> {
+pub enum Operation<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     Put { key: K, value: (V, u128) },
     Remove { key: K },
 }
 
-impl<K, V> RMap<K, V> {
-    fn new() -> Self {
+impl<K, V> RMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    pub fn new() -> Self {
         Self {
             entries: HashMap::new(),
         }
     }
 
-    fn value() {}
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
 
-    fn put() {}
+    pub fn value() {}
 
-    fn remove() {}
+    pub fn put() {}
 
-    fn get() {}
+    pub fn remove() {}
+
+    pub fn get() {}
 }
 
-impl<K, V> CmRDT for RMap<K, V> {
+impl<K, V> CmRDT for RMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     type Op = Operation<K, V>;
 
     fn apply(&mut self, op: Self::Op) {
@@ -42,7 +68,11 @@ impl<K, V> CmRDT for RMap<K, V> {
     }
 }
 
-impl<K, V> CvRDT for RMap<K, V> {
+impl<K, V> CvRDT for RMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     fn merge(&mut self, other: &Self) {
         todo!()
     }
@@ -50,8 +80,8 @@ impl<K, V> CvRDT for RMap<K, V> {
 
 impl<K, V> Delta for RMap<K, V>
 where
-    K: Eq + Hash + Clone,
-    V: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         todo!()
@@ -62,10 +92,42 @@ where
     }
 }
 
+impl<K, V> TextOperationToCmRDT for RMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K, V>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K, V> TextOperationToCvRDT for RMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K, V> TextOperationToDelta for RMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K, V> Semilattice<RMap<K, V>> for RMap<K, V>
 where
-    K: Eq + Hash + Clone,
-    V: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     type Op = Operation<K, V>;
 

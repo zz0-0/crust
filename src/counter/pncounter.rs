@@ -1,13 +1,16 @@
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, hash::Hash};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PNCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     p: HashMap<K, u64>,
     n: HashMap<K, u64>,
@@ -20,13 +23,17 @@ pub enum Operation<K> {
 
 impl<K> PNCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     pub fn new() -> Self {
         Self {
             p: HashMap::new(),
             n: HashMap::new(),
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
     }
 
     pub fn value(&self) -> i64 {
@@ -46,7 +53,7 @@ where
 
 impl<K> CmRDT for PNCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     type Op = Operation<K>;
     fn apply(&mut self, op: Self::Op) {
@@ -65,7 +72,7 @@ where
 
 impl<K> CvRDT for PNCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn merge(&mut self, other: &Self) {
         for (k, v) in &other.p {
@@ -81,7 +88,7 @@ where
 
 impl<K> Delta for PNCounter<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         todo!();
@@ -92,9 +99,38 @@ where
     }
 }
 
+impl<K> TextOperationToCmRDT for PNCounter<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToCvRDT for PNCounter<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToDelta for PNCounter<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K> Semilattice<PNCounter<K>> for PNCounter<K>
 where
-    K: Eq + Hash + Clone + std::fmt::Debug,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;

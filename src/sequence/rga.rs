@@ -1,24 +1,35 @@
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 use serde::{Deserialize, Serialize};
+use std::hash::Hash;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct RGA<K> {
+pub struct RGA<K> {
     elements: Vec<(K, usize)>,
 }
 
-pub enum Operation {
-    Insert { index: usize, element: () },
+pub enum Operation<K> {
+    Insert { index: usize, element: K },
     Delete { index: usize },
 }
 
-impl<K> RGA<K> {
+impl<K> RGA<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     pub fn new() -> Self {
         Self {
             elements: Vec::new(),
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
     }
 
     pub fn insert() {}
@@ -27,7 +38,7 @@ impl<K> RGA<K> {
 }
 
 impl<K> CmRDT for RGA<K> {
-    type Op = Operation;
+    type Op = Operation<K>;
 
     fn apply(&mut self, op: Self::Op) {
         match op {
@@ -39,7 +50,7 @@ impl<K> CmRDT for RGA<K> {
 
 impl<K> CvRDT for RGA<K>
 where
-    K: Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn merge(&mut self, other: &Self) {
         let mut merged = self.elements.clone();
@@ -50,7 +61,7 @@ where
 
 impl<K> Delta for RGA<K>
 where
-    K: Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         todo!()
@@ -61,11 +72,40 @@ where
     }
 }
 
+impl<K> TextOperationToCmRDT for RGA<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToCvRDT for RGA<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToDelta for RGA<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K> Semilattice<RGA<K>> for RGA<K>
 where
-    K: Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
-    type Op = Operation;
+    type Op = Operation<K>;
 
     fn cmrdt_associative(a: RGA<K>, b: RGA<K>, c: RGA<K>) -> bool
     where

@@ -1,6 +1,9 @@
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, hash::Hash};
@@ -8,7 +11,7 @@ use std::{collections::HashSet, hash::Hash};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GGraph<K>
 where
-    K: Hash + Eq + Clone + Ord,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     vertices: HashSet<K>,
     edges: HashSet<(K, K)>,
@@ -21,13 +24,17 @@ pub enum Operation<K> {
 
 impl<K> GGraph<K>
 where
-    K: Hash + Eq + Clone + Ord,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     pub fn new() -> Self {
         Self {
             vertices: HashSet::new(),
             edges: HashSet::new(),
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
     }
 
     pub fn value(&self) -> (Vec<K>, Vec<(K, K)>) {
@@ -51,7 +58,7 @@ where
 
 impl<K> CmRDT for GGraph<K>
 where
-    K: Hash + Eq + Clone + Ord,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     type Op = Operation<K>;
 
@@ -69,7 +76,7 @@ where
 
 impl<K> CvRDT for GGraph<K>
 where
-    K: Hash + Eq + Clone + Ord,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn merge(&mut self, other: &Self) {
         self.vertices.extend(other.vertices.clone());
@@ -79,7 +86,7 @@ where
 
 impl<K> Delta for GGraph<K>
 where
-    K: Hash + Eq + Clone + Ord,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         Self {
@@ -93,9 +100,38 @@ where
     }
 }
 
+impl<K> TextOperationToCmRDT for GGraph<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToCvRDT for GGraph<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToDelta for GGraph<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K> Semilattice<GGraph<K>> for GGraph<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;

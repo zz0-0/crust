@@ -1,2 +1,2 @@
-mod gcounter;
-mod pncounter;
+pub mod gcounter;
+pub mod pncounter;

@@ -1,24 +1,38 @@
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
+use std::hash::Hash;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GSet<K: Ord + Clone> {
     added: BTreeSet<K>,
 }
 
-pub enum Operation<K> {
+pub enum Operation<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     Add(K),
 }
 
-impl<K: Ord + Clone> GSet<K> {
+impl<K: Ord + Clone> GSet<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     pub fn new() -> Self {
         Self {
             added: BTreeSet::new(),
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
     }
 
     pub fn insert(&mut self, value: K) {
@@ -34,7 +48,10 @@ impl<K: Ord + Clone> GSet<K> {
     }
 }
 
-impl<K: Ord + Clone> CmRDT for GSet<K> {
+impl<K: Ord + Clone> CmRDT for GSet<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     type Op = Operation<K>;
 
     fn apply(&mut self, op: Self::Op) {
@@ -64,9 +81,38 @@ impl<K: Ord + Clone> Delta for GSet<K> {
     }
 }
 
+impl<K> TextOperationToCmRDT for GSet<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToCvRDT for GSet<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToDelta for GSet<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K> Semilattice<GSet<K>> for GSet<K>
 where
-    K: Ord + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;

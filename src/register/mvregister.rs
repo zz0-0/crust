@@ -2,6 +2,9 @@ use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
     get_current_timestamp,
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, hash::Hash};
@@ -9,7 +12,7 @@ use std::{collections::HashSet, hash::Hash};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MVRegister<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     values: HashSet<(K, u128)>,
 }
@@ -20,12 +23,16 @@ pub enum Operation<K> {
 
 impl<K> MVRegister<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     pub fn new() -> Self {
         Self {
             values: HashSet::new(),
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
     }
 
     pub fn update(&mut self, value: K) {
@@ -37,7 +44,7 @@ where
 
 impl<K> CmRDT for MVRegister<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     type Op = Operation<K>;
 
@@ -50,7 +57,7 @@ where
 
 impl<K> CvRDT for MVRegister<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn merge(&mut self, other: &Self) {
         for entry in other.values.iter() {
@@ -63,7 +70,7 @@ where
 
 impl<K> Delta for MVRegister<K>
 where
-    K: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         todo!();
@@ -74,9 +81,38 @@ where
     }
 }
 
+impl<K> TextOperationToCmRDT for MVRegister<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToCvRDT for MVRegister<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToDelta for MVRegister<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K> Semilattice<MVRegister<K>> for MVRegister<K>
 where
-    K: Eq + Hash + Clone + std::fmt::Debug,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;

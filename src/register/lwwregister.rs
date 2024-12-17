@@ -2,13 +2,17 @@ use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
     get_current_timestamp,
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 use serde::{Deserialize, Serialize};
+use std::hash::Hash;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LWWRegister<K>
 where
-    K: Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     value: Option<K>,
     timestamp: u128,
@@ -20,13 +24,17 @@ pub enum Operation<K> {
 
 impl<K> LWWRegister<K>
 where
-    K: Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     pub fn new() -> Self {
         Self {
             value: None,
             timestamp: 0,
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
     }
 
     pub fn read(&self) -> Option<K> {
@@ -45,7 +53,7 @@ where
 
 impl<K> CmRDT for LWWRegister<K>
 where
-    K: Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     type Op = Operation<K>;
 
@@ -63,7 +71,7 @@ where
 
 impl<K> CvRDT for LWWRegister<K>
 where
-    K: Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn merge(&mut self, other: &Self) {
         match self.timestamp.cmp(&other.timestamp) {
@@ -81,7 +89,7 @@ where
 
 impl<K> Delta for LWWRegister<K>
 where
-    K: Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         todo!()
@@ -92,9 +100,38 @@ where
     }
 }
 
+impl<K> TextOperationToCmRDT for LWWRegister<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToCvRDT for LWWRegister<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToDelta for LWWRegister<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K> Semilattice<LWWRegister<K>> for LWWRegister<K>
 where
-    K: Clone + PartialEq,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;

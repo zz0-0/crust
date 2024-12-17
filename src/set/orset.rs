@@ -1,14 +1,18 @@
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
+use std::hash::Hash;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ORSet<K>
 where
-    K: Ord + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     added: BTreeSet<K>,
     removed: BTreeSet<K>,
@@ -21,13 +25,17 @@ pub enum Operation<K> {
 
 impl<K> ORSet<K>
 where
-    K: Ord + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     pub fn new() -> Self {
         Self {
             added: BTreeSet::new(),
             removed: BTreeSet::new(),
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
     }
 
     pub fn insert(&mut self, value: K) {
@@ -42,7 +50,7 @@ where
 
 impl<K> CmRDT for ORSet<K>
 where
-    K: Ord + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     type Op = Operation<K>;
     fn apply(&mut self, op: Self::Op) {
@@ -59,7 +67,7 @@ where
 
 impl<K> CvRDT for ORSet<K>
 where
-    K: Ord + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn merge(&mut self, other: &Self) {
         self.added.extend(other.added.clone());
@@ -70,7 +78,7 @@ where
 
 impl<K> Delta for ORSet<K>
 where
-    K: Ord + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         Self {
@@ -84,9 +92,38 @@ where
     }
 }
 
+impl<K> TextOperationToCmRDT for ORSet<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToCvRDT for ORSet<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToDelta for ORSet<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K> Semilattice<ORSet<K>> for ORSet<K>
 where
-    K: Ord + Clone + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     Self: CmRDT<Op = Operation<K>>,
 {
     type Op = Operation<K>;

@@ -1,24 +1,38 @@
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 use serde::{Deserialize, Serialize};
+use std::hash::Hash;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct Logoot<K> {
+pub struct Logoot<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     elements: Vec<(K, usize)>,
 }
 
-pub enum Operation {
-    Insert { index: usize, element: () },
+pub enum Operation<K> {
+    Insert { index: usize, element: K },
     Delete { index: usize },
 }
 
-impl<K> Logoot<K> {
+impl<K> Logoot<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     pub fn new() -> Self {
         Self {
             elements: Vec::new(),
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
     }
 
     pub fn insert() {}
@@ -28,8 +42,11 @@ impl<K> Logoot<K> {
     // pub fn position() -> usize {}
 }
 
-impl<K> CmRDT for Logoot<K> {
-    type Op = Operation;
+impl<K> CmRDT for Logoot<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
 
     fn apply(&mut self, op: Self::Op) {
         match op {
@@ -41,7 +58,7 @@ impl<K> CmRDT for Logoot<K> {
 
 impl<K> CvRDT for Logoot<K>
 where
-    K: Clone + PartialEq + PartialOrd,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn merge(&mut self, other: &Self) {
         let mut merged = self.elements.clone();
@@ -62,7 +79,7 @@ where
 
 impl<K> Delta for Logoot<K>
 where
-    K: Clone + PartialEq + PartialOrd,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         todo!()
@@ -73,11 +90,40 @@ where
     }
 }
 
+impl<K> TextOperationToCmRDT for Logoot<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToCvRDT for Logoot<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToDelta for Logoot<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K> Semilattice<Logoot<K>> for Logoot<K>
 where
-    K: Clone + PartialEq + PartialOrd,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
-    type Op = Operation;
+    type Op = Operation<K>;
 
     fn cmrdt_associative(a: Logoot<K>, b: Logoot<K>, c: Logoot<K>) -> bool
     where

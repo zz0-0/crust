@@ -1,11 +1,21 @@
 use std::{collections::HashMap, hash::Hash};
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
 
-struct LWWMap<K, V> {
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LWWMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     entries: HashMap<K, (V, u128)>,
 }
 
@@ -14,23 +24,35 @@ pub enum Operation<K, V> {
     Remove { key: K },
 }
 
-impl<K, V> LWWMap<K, V> {
-    fn new() -> Self {
+impl<K, V> LWWMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    pub fn new() -> Self {
         Self {
             entries: HashMap::new(),
         }
     }
 
-    fn value() {}
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
 
-    fn put() {}
+    pub fn value() {}
 
-    fn remove() {}
+    pub fn put() {}
 
-    fn get() {}
+    pub fn remove() {}
+
+    pub fn get() {}
 }
 
-impl<K, V> CmRDT for LWWMap<K, V> {
+impl<K, V> CmRDT for LWWMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     type Op = Operation<K, V>;
 
     fn apply(&mut self, op: Self::Op) {
@@ -43,8 +65,8 @@ impl<K, V> CmRDT for LWWMap<K, V> {
 
 impl<K, V> CvRDT for LWWMap<K, V>
 where
-    K: Eq + Hash + Clone,
-    V: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn merge(&mut self, other: &Self) {
         for (key, (value, timestamp)) in other.entries.iter() {
@@ -66,8 +88,8 @@ where
 
 impl<K, V> Delta for LWWMap<K, V>
 where
-    K: Eq + Hash + Clone,
-    V: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     fn generate_delta(&self, since: &Self) -> Self {
         todo!()
@@ -78,10 +100,42 @@ where
     }
 }
 
+impl<K, V> TextOperationToCmRDT for LWWMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K, V>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K, V> TextOperationToCvRDT for LWWMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K, V> TextOperationToDelta for LWWMap<K, V>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
 impl<K, V> Semilattice<LWWMap<K, V>> for LWWMap<K, V>
 where
-    K: Eq + Hash + Clone,
-    V: Eq + Hash + Clone,
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
     type Op = Operation<K, V>;
 

@@ -3,27 +3,56 @@ use std::collections::HashMap;
 use crate::{
     crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
+    text_operation::{
+        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
+    },
 };
+use serde::{Deserialize, Serialize};
+use std::hash::Hash;
 
-struct MerkleDAGTree<K> {
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MerkleDAGTree<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     vertices: HashMap<K, Vec<u8>>,
     edges: HashMap<K, Vec<K>>,
 }
 
-pub enum Operation<K> {
+pub enum Operation<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     AddVertex { hash: K, data: Vec<u8> },
     AddEdge { from: K, to: K },
 }
 
-impl<K> MerkleDAGTree<K> {
-    fn add_edge() {}
+impl<K> MerkleDAGTree<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    pub fn new() -> Self {
+        Self {
+            vertices: HashMap::new(),
+            edges: HashMap::new(),
+        }
+    }
 
-    fn add_vertex() {}
+    pub fn to_string(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
 
-    fn verify() {}
+    pub fn add_edge() {}
+
+    pub fn add_vertex() {}
+
+    pub fn verify() {}
 }
 
-impl<K> CmRDT for MerkleDAGTree<K> {
+impl<K> CmRDT for MerkleDAGTree<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     type Op = Operation<K>;
 
     fn apply(&mut self, op: Self::Op) {
@@ -34,13 +63,48 @@ impl<K> CmRDT for MerkleDAGTree<K> {
     }
 }
 
-impl<K> CvRDT for MerkleDAGTree<K> {
+impl<K> CvRDT for MerkleDAGTree<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     fn merge(&mut self, other: &Self) {
         todo!()
     }
 }
 
-impl<K> Delta for MerkleDAGTree<K> {
+impl<K> TextOperationToCmRDT for MerkleDAGTree<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    type Op = Operation<K>;
+
+    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToCvRDT for MerkleDAGTree<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> TextOperationToDelta for MerkleDAGTree<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
+    fn convert_operation(&self, op: TextOperation) {
+        todo!()
+    }
+}
+
+impl<K> Delta for MerkleDAGTree<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     fn generate_delta(&self, since: &Self) -> Self {
         todo!()
     }
@@ -50,7 +114,10 @@ impl<K> Delta for MerkleDAGTree<K> {
     }
 }
 
-impl<K> Semilattice<MerkleDAGTree<K>> for MerkleDAGTree<K> {
+impl<K> Semilattice<MerkleDAGTree<K>> for MerkleDAGTree<K>
+where
+    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+{
     type Op = Operation<K>;
 
     fn cmrdt_associative(a: MerkleDAGTree<K>, b: MerkleDAGTree<K>, c: MerkleDAGTree<K>) -> bool

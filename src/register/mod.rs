@@ -1,2 +1,2 @@
-mod lwwregister;
-mod mvregister;
+pub mod lwwregister;
+pub mod mvregister;
