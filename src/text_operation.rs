@@ -1,5 +1,6 @@
 use crate::crdt_type::{CmRDT, CvRDT, Delta};
 
+#[derive(Debug, Clone)]
 pub enum TextOperation {
     Insert { position: usize, text: String },
     Delete { position: usize },
