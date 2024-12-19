@@ -78,7 +78,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for LSeq<K>
+impl<K> TextOperationToCmRDT<LSeq<K>> for LSeq<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -89,7 +89,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for LSeq<K>
+impl<K> TextOperationToCvRDT<LSeq<K>> for LSeq<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -98,7 +98,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for LSeq<K>
+impl<K> TextOperationToDelta<LSeq<K>> for LSeq<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

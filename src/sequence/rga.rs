@@ -72,7 +72,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for RGA<K>
+impl<K> TextOperationToCmRDT<RGA<K>> for RGA<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -83,7 +83,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for RGA<K>
+impl<K> TextOperationToCvRDT<RGA<K>> for RGA<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for RGA<K>
+impl<K> TextOperationToDelta<RGA<K>> for RGA<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

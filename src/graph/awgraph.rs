@@ -114,7 +114,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for AWGraph<K>
+impl<K> TextOperationToCmRDT<AWGraph<K>> for AWGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -125,7 +125,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for AWGraph<K>
+impl<K> TextOperationToCvRDT<AWGraph<K>> for AWGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -134,7 +134,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for AWGraph<K>
+impl<K> TextOperationToDelta<AWGraph<K>> for AWGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

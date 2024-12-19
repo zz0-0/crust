@@ -100,7 +100,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for GGraph<K>
+impl<K> TextOperationToCmRDT<GGraph<K>> for GGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -111,7 +111,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for GGraph<K>
+impl<K> TextOperationToCvRDT<GGraph<K>> for GGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -120,7 +120,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for GGraph<K>
+impl<K> TextOperationToDelta<GGraph<K>> for GGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

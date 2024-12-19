@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for ORSet<K>
+impl<K> TextOperationToCmRDT<ORSet<K>> for ORSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -103,7 +103,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for ORSet<K>
+impl<K> TextOperationToCvRDT<ORSet<K>> for ORSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -112,7 +112,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for ORSet<K>
+impl<K> TextOperationToDelta<ORSet<K>> for ORSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

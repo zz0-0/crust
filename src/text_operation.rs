@@ -6,15 +6,24 @@ pub enum TextOperation {
     Delete { position: usize },
 }
 
-pub trait TextOperationToCmRDT: CmRDT {
+pub trait TextOperationToCmRDT<K>
+where
+    K: CmRDT,
+{
     type Op;
-    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op>;
+    fn convert_operation(&self, op: TextOperation) -> Vec<Self::Op>;
 }
 
-pub trait TextOperationToCvRDT: CvRDT {
+pub trait TextOperationToCvRDT<K>
+where
+    K: CvRDT,
+{
     fn convert_operation(&self, op: TextOperation);
 }
 
-pub trait TextOperationToDelta: Delta {
+pub trait TextOperationToDelta<K>
+where
+    K: Delta,
+{
     fn convert_operation(&self, op: TextOperation);
 }

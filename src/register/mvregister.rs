@@ -81,7 +81,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for MVRegister<K>
+impl<K> TextOperationToCmRDT<MVRegister<K>> for MVRegister<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for MVRegister<K>
+impl<K> TextOperationToCvRDT<MVRegister<K>> for MVRegister<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -101,7 +101,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for MVRegister<K>
+impl<K> TextOperationToDelta<MVRegister<K>> for MVRegister<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

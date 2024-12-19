@@ -96,7 +96,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for AWSet<K>
+impl<K> TextOperationToCmRDT<AWSet<K>> for AWSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -107,7 +107,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for AWSet<K>
+impl<K> TextOperationToCvRDT<AWSet<K>> for AWSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -116,7 +116,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for AWSet<K>
+impl<K> TextOperationToDelta<AWSet<K>> for AWSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

@@ -72,7 +72,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for MerkleDAGTree<K>
+impl<K> TextOperationToCmRDT<MerkleDAGTree<K>> for MerkleDAGTree<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -83,7 +83,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for MerkleDAGTree<K>
+impl<K> TextOperationToCvRDT<MerkleDAGTree<K>> for MerkleDAGTree<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for MerkleDAGTree<K>
+impl<K> TextOperationToDelta<MerkleDAGTree<K>> for MerkleDAGTree<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

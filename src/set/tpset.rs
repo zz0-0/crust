@@ -90,7 +90,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for TPSet<K>
+impl<K> TextOperationToCmRDT<TPSet<K>> for TPSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -101,7 +101,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for TPSet<K>
+impl<K> TextOperationToCvRDT<TPSet<K>> for TPSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -110,7 +110,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for TPSet<K>
+impl<K> TextOperationToDelta<TPSet<K>> for TPSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

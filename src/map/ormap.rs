@@ -112,7 +112,7 @@ where
     }
 }
 
-impl<K, V> TextOperationToCmRDT for ORMap<K, V>
+impl<K, V> TextOperationToCmRDT<ORMap<K, V>> for ORMap<K, V>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
@@ -124,7 +124,7 @@ where
     }
 }
 
-impl<K, V> TextOperationToCvRDT for ORMap<K, V>
+impl<K, V> TextOperationToCvRDT<ORMap<K, V>> for ORMap<K, V>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
@@ -134,7 +134,7 @@ where
     }
 }
 
-impl<K, V> TextOperationToDelta for ORMap<K, V>
+impl<K, V> TextOperationToDelta<ORMap<K, V>> for ORMap<K, V>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,

@@ -89,7 +89,7 @@ where
     }
 }
 
-impl<K, V> TextOperationToCmRDT for GMap<K, V>
+impl<K, V> TextOperationToCmRDT<GMap<K, V>> for GMap<K, V>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
@@ -101,7 +101,7 @@ where
     }
 }
 
-impl<K, V> TextOperationToCvRDT for GMap<K, V>
+impl<K, V> TextOperationToCvRDT<GMap<K, V>> for GMap<K, V>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
@@ -111,7 +111,7 @@ where
     }
 }
 
-impl<K, V> TextOperationToDelta for GMap<K, V>
+impl<K, V> TextOperationToDelta<GMap<K, V>> for GMap<K, V>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,

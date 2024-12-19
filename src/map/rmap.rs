@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<K, V> TextOperationToCmRDT for RMap<K, V>
+impl<K, V> TextOperationToCmRDT<RMap<K, V>> for RMap<K, V>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
@@ -104,7 +104,7 @@ where
     }
 }
 
-impl<K, V> TextOperationToCvRDT for RMap<K, V>
+impl<K, V> TextOperationToCvRDT<RMap<K, V>> for RMap<K, V>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
@@ -114,7 +114,7 @@ where
     }
 }
 
-impl<K, V> TextOperationToDelta for RMap<K, V>
+impl<K, V> TextOperationToDelta<RMap<K, V>> for RMap<K, V>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
     V: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,

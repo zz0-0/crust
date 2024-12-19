@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for RWSet<K>
+impl<K> TextOperationToCmRDT<RWSet<K>> for RWSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -103,7 +103,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for RWSet<K>
+impl<K> TextOperationToCvRDT<RWSet<K>> for RWSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -112,7 +112,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for RWSet<K>
+impl<K> TextOperationToDelta<RWSet<K>> for RWSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

@@ -150,7 +150,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for ORGraph<K>
+impl<K> TextOperationToCmRDT<ORGraph<K>> for ORGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -161,7 +161,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for ORGraph<K>
+impl<K> TextOperationToCvRDT<ORGraph<K>> for ORGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -170,7 +170,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for ORGraph<K>
+impl<K> TextOperationToDelta<ORGraph<K>> for ORGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

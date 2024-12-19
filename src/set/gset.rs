@@ -81,7 +81,7 @@ impl<K: Ord + Clone> Delta for GSet<K> {
     }
 }
 
-impl<K> TextOperationToCmRDT for GSet<K>
+impl<K> TextOperationToCmRDT<GSet<K>> for GSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -92,7 +92,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for GSet<K>
+impl<K> TextOperationToCvRDT<GSet<K>> for GSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -101,7 +101,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for GSet<K>
+impl<K> TextOperationToDelta<GSet<K>> for GSet<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

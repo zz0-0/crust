@@ -99,7 +99,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for PNCounter<K>
+impl<K> TextOperationToCmRDT<PNCounter<K>> for PNCounter<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -110,7 +110,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for PNCounter<K>
+impl<K> TextOperationToCvRDT<PNCounter<K>> for PNCounter<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -119,7 +119,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for PNCounter<K>
+impl<K> TextOperationToDelta<PNCounter<K>> for PNCounter<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

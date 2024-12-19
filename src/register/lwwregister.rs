@@ -100,7 +100,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for LWWRegister<K>
+impl<K> TextOperationToCmRDT<LWWRegister<K>> for LWWRegister<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -111,7 +111,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for LWWRegister<K>
+impl<K> TextOperationToCvRDT<LWWRegister<K>> for LWWRegister<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -120,7 +120,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for LWWRegister<K>
+impl<K> TextOperationToDelta<LWWRegister<K>> for LWWRegister<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {

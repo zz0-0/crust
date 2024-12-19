@@ -134,7 +134,7 @@ where
     }
 }
 
-impl<K> TextOperationToCmRDT for TPGraph<K>
+impl<K> TextOperationToCmRDT<TPGraph<K>> for TPGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -145,7 +145,7 @@ where
     }
 }
 
-impl<K> TextOperationToCvRDT for TPGraph<K>
+impl<K> TextOperationToCvRDT<TPGraph<K>> for TPGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
@@ -154,7 +154,7 @@ where
     }
 }
 
-impl<K> TextOperationToDelta for TPGraph<K>
+impl<K> TextOperationToDelta<TPGraph<K>> for TPGraph<K>
 where
     K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
 {
