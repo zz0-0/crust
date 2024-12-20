@@ -7,11 +7,9 @@ use axum::{
 use counter::{gcounter::GCounter, pncounter::PNCounter};
 use crdt_type::{CmRDT, CvRDT, Delta};
 use graph::{awgraph::AWGraph, ggraph::GGraph, orgraph::ORGraph, tpgraph::TPGraph};
-use k8s_openapi::api::core::v1::Pod;
-use kube::{api::ListParams, Api};
 use map::{cmmap::CMMap, gmap::GMap, lwwmap::LWWMap, ormap::ORMap, rmap::RMap};
 use register::{lwwregister::LWWRegister, mvregister::MVRegister};
-use reqwest::Client;
+use reqwest::{Client, Response};
 use sequence::{logoot::Logoot, lseq::LSeq, rga::RGA};
 use serde_json::{json, Value};
 use set::{awset::AWSet, gset::GSet, orset::ORSet, rwset::RWSet, tpset::TPSet};
@@ -250,47 +248,46 @@ async fn send_operation_to_peers(
         _ => { /* handle unknown type */ }
     };
     let client = Client::new();
-    let kube_client = kube::Client::try_default().await.unwrap();
-    let namespace = env::var("NAMESPACE").unwrap_or("default".to_string());
-    // let service_name = env::var("SERVICE_NAME").unwrap_or("crdt-service".to_string());
-    // let pod_count = env::var("REPLICA_COUNT").unwrap().parse::<i32>().unwrap();
-    let pods: Api<Pod> = Api::namespaced(kube_client, &namespace);
-    let lp = ListParams::default();
-    let pod_list = pods.list(&lp).await.unwrap();
-    let mut pod_ips = Vec::new();
-    for pod in pod_list.iter() {
-        if let Some(status) = &pod.status {
-            if let Some(pod_ip) = &status.pod_ip {
-                pod_ips.push(pod_ip.clone());
-            }
-        }
-    }
-
     let mut responses = Vec::new();
-    for ip in pod_ips {
-        let peer_url = format!("http://{}:3000", ip);
+    let pod_count = env::var("REPLICA_COUNT").unwrap().parse::<i32>().unwrap();
+    let current_pod_name = env::var("POD_NAME").unwrap_or_default();
+    for i in 0..pod_count {
+        let target_pod_name = format!("crust-{}", i);
+        let host = format!("{}.crdt-service.default.svc.cluster.local", target_pod_name);
+        let addr = format!("http://{}:3000", host);
+        if target_pod_name == current_pod_name {
+            continue;
+        }
         let url = format!(
             "{}/crdt/{}/operation/{}",
-            peer_url,
+            addr,
             crdt_type,
             operation.clone()
         );
-        let response = client.post(url).send().await.unwrap();
-        responses.push(response);
-    }
-    for response in responses {
-        if response.status().is_success() {
-            println!("{:?}-{:?}", response, result);
-            let merge_result = verify_merged_result(result, response);
-            // println!(
-            //     "{:?}-{:?}-{:?}",
-            //     crdt_type,
-            //     text_operation.clone(),
-            //     merge_result
-            // );
+        let response = match client.get(&url).send().await {
+            Ok(response) => Some(response),
+            Err(e) => {
+                println!("Error: {:?}", e);
+                continue;
+            }
+        };
+        if let Some(r) = response {
+            responses.push(r);
         }
-        return Json(json!({"error": "Failed to send operation to peers"}));
     }
+    if responses.is_empty() {
+        return Json(json!({
+            "status": "error",
+            "message": "Failed to communicate with any peers"
+        }));
+    }
+    let merge_result = verify_merged_result(result, responses);
+    println!(
+        "{:?}-{:?}-{:?}",
+        crdt_type,
+        text_operation.clone(),
+        merge_result.await
+    );
     Json(json!({"message": "Operation sent to peers successfully"}))
 }
 
@@ -493,13 +490,52 @@ async fn sync_operation(Path((crdt_type, operation)): Path<(String, String)>) ->
     Json(json!(result))
 }
 
-fn verify_merged_result(result: String, response: reqwest::Response) -> bool {
-    // let response_result = response.json().await.unwrap();
-    // if result != response_result {
-    //     panic!("Merged result is not same across all peers");
-    // }
+async fn verify_merged_result(result: String, responses: Vec<Response>) -> bool {
+    let mut states = Vec::new();
+    states.push(result);
 
-    false
+    for response in responses {
+        match response.text().await {
+            Ok(remote_state) => {
+                let parsed: Value = serde_json::from_str(&remote_state).unwrap();
+                let clean_json_str = serde_json::to_string(&parsed);
+                match clean_json_str {
+                    Ok(clean_json_str) => {
+                        states.push(clean_json_str);
+                    }
+                    Err(e) => {
+                        println!("Failed to clean JSON: {:?}", e);
+                        continue;
+                    }
+                }
+            }
+            Err(e) => {
+                println!("Failed to get response text: {:?}", e);
+                continue;
+            }
+        }
+    }
+
+    // If we have less than 2 states (including local), verification failed
+    if states.len() < 2 {
+        println!("Not enough responses for verification");
+        return false;
+    }
+
+    // Compare all states with the first one
+    let reference_state = &states[0];
+    let all_match = states.iter().all(|state| state == reference_state);
+
+    if !all_match {
+        println!("State mismatch detected:");
+        for (i, state) in states.iter().enumerate() {
+            println!("Replica {}: {}", i, state);
+        }
+        return false;
+    }
+
+    println!("All states consistent: {}", reference_state);
+    true
 }
 
 async fn sync_state(Path(crdt_type): Path<String>) {
