@@ -1,9 +1,6 @@
 use crate::{
-    crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
-    text_operation::{
-        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
-    },
+    text_operation::TextOperation,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -12,7 +9,7 @@ use std::hash::Hash;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TPSet<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    K: Ord,
 {
     added: BTreeSet<K>,
     removed: BTreeSet<K>,
@@ -26,7 +23,7 @@ pub enum Operation<K> {
 
 impl<K> TPSet<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    K: Ord + Clone + Serialize,
 {
     pub fn new() -> Self {
         Self {
@@ -39,7 +36,6 @@ where
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
-
     pub fn insert(&mut self, value: K) {
         self.added.insert(value.clone());
         self.removed.remove(&value.clone());
@@ -53,27 +49,41 @@ where
 
 impl<K> CmRDT for TPSet<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    K: Ord + Clone,
 {
     type Op = Operation<K>;
+    type Value = K;
+
     fn apply(&mut self, op: Self::Op) {
+        todo!()
+    }
+
+    fn convert_operation(&self, op: TextOperation<K>) -> Vec<Self::Op> {
         todo!()
     }
 }
 
 impl<K> CvRDT for TPSet<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    K: Ord + Clone,
 {
+    type Value = K;
+
     fn merge(&mut self, other: &Self) {
+        todo!()
+    }
+
+    fn convert_state(&self, op: TextOperation<K>) {
         todo!()
     }
 }
 
 impl<K> Delta for TPSet<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    K: Ord + Clone,
 {
+    type Value = K;
+
     fn generate_delta(&self, since: &Self) -> Self {
         Self {
             added: self.added.difference(&since.added).cloned().collect(),
@@ -88,125 +98,8 @@ where
     fn apply_delta(&mut self, other: &Self) {
         self.merge(other);
     }
-}
 
-impl<K> TextOperationToCmRDT<TPSet<K>> for TPSet<K>
-where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
-{
-    type Op = Operation<K>;
-
-    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+    fn convert_delta(&self, op: TextOperation<K>) {
         todo!()
-    }
-}
-
-impl<K> TextOperationToCvRDT<TPSet<K>> for TPSet<K>
-where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
-{
-    fn convert_operation(&self, op: TextOperation) {
-        todo!()
-    }
-}
-
-impl<K> TextOperationToDelta<TPSet<K>> for TPSet<K>
-where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
-{
-    fn convert_operation(&self, op: TextOperation) {
-        todo!()
-    }
-}
-
-impl<K> Semilattice<TPSet<K>> for TPSet<K>
-where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
-    Self: CmRDT<Op = Operation<K>>,
-{
-    type Op = Operation<K>;
-
-    fn cmrdt_associative(a: TPSet<K>, b: TPSet<K>, c: TPSet<K>) -> bool
-    where
-        TPSet<K>: CmRDT,
-    {
-        todo!();
-    }
-
-    fn cmrdt_commutative(a: TPSet<K>, b: TPSet<K>) -> bool
-    where
-        TPSet<K>: CmRDT,
-    {
-        todo!();
-    }
-
-    fn cmrdt_idempotent(a: TPSet<K>) -> bool
-    where
-        TPSet<K>: CmRDT,
-    {
-        todo!();
-    }
-
-    fn cvrdt_associative(a: TPSet<K>, b: TPSet<K>, c: TPSet<K>) -> bool
-    where
-        TPSet<K>: CvRDT,
-    {
-        todo!();
-    }
-
-    fn cvrdt_commutative(a: TPSet<K>, b: TPSet<K>) -> bool
-    where
-        TPSet<K>: CvRDT,
-    {
-        todo!();
-    }
-
-    fn cvrdt_idempotent(a: TPSet<K>) -> bool
-    where
-        TPSet<K>: CvRDT,
-    {
-        todo!();
-    }
-
-    fn delta_associative(a: TPSet<K>, b: TPSet<K>, c: TPSet<K>) -> bool
-    where
-        TPSet<K>: Delta,
-    {
-        todo!();
-    }
-
-    fn delta_commutative(a: TPSet<K>, b: TPSet<K>) -> bool
-    where
-        TPSet<K>: Delta,
-    {
-        todo!();
-    }
-
-    fn delta_idempotent(a: TPSet<K>) -> bool
-    where
-        TPSet<K>: Delta,
-    {
-        todo!();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_semilattice() {
-        // let mut a = TPSet::new();
-        // let mut b = TPSet::new();
-        // let mut c = TPSet::new();
-        // assert!(TPSet::cmrdt_associative(a.clone(), b.clone(), c.clone()));
-        // assert!(TPSet::cmrdt_commutative(a.clone(), b.clone()));
-        // assert!(TPSet::cmrdt_idempotent(a.clone()));
-        // assert!(TPSet::cvrdt_associative(a.clone(), b.clone(), c.clone()));
-        // assert!(TPSet::cvrdt_commutative(a.clone(), b.clone()));
-        // assert!(TPSet::cvrdt_idempotent(a.clone()));
-        // assert!(TPSet::delta_associative(a.clone(), b.clone(), c.clone()));
-        // assert!(TPSet::delta_commutative(a.clone(), b.clone()));
-        // assert!(TPSet::delta_idempotent(a.clone()));
     }
 }

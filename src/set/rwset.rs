@@ -1,9 +1,6 @@
 use crate::{
-    crdt_prop::Semilattice,
     crdt_type::{CmRDT, CvRDT, Delta},
-    text_operation::{
-        TextOperation, TextOperationToCmRDT, TextOperationToCvRDT, TextOperationToDelta,
-    },
+    text_operation::TextOperation,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -12,7 +9,7 @@ use std::hash::Hash;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RWSet<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    K: Ord,
 {
     added: BTreeSet<K>,
     removed: BTreeSet<K>,
@@ -25,7 +22,7 @@ pub enum Operation<K> {
 
 impl<K> RWSet<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    K: Ord + Clone + Serialize,
 {
     pub fn new() -> Self {
         Self {
@@ -37,7 +34,6 @@ where
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
-
     pub fn insert(&mut self, value: K) {
         self.added.insert(value.clone());
         self.removed.remove(&value.clone());
@@ -51,9 +47,11 @@ where
 
 impl<K> CmRDT for RWSet<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    K: Ord + Clone + Serialize,
 {
     type Op = Operation<K>;
+    type Value = K;
+
     fn apply(&mut self, op: Self::Op) {
         match op {
             Operation::Add(value) => {
@@ -64,23 +62,35 @@ where
             }
         }
     }
+
+    fn convert_operation(&self, op: TextOperation<K>) -> Vec<Self::Op> {
+        todo!()
+    }
 }
 
 impl<K> CvRDT for RWSet<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    K: Ord + Clone,
 {
+    type Value = K;
+
     fn merge(&mut self, other: &Self) {
         self.added.extend(other.added.clone());
         self.removed.extend(other.removed.clone());
         self.added.retain(|k| !self.removed.contains(k));
     }
+
+    fn convert_state(&self, op: TextOperation<K>) {
+        todo!()
+    }
 }
 
 impl<K> Delta for RWSet<K>
 where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
+    K: Ord + Clone,
 {
+    type Value = K;
+
     fn generate_delta(&self, since: &Self) -> Self {
         Self {
             added: self.added.difference(&since.added).cloned().collect(),
@@ -90,125 +100,8 @@ where
     fn apply_delta(&mut self, other: &Self) {
         self.merge(other);
     }
-}
 
-impl<K> TextOperationToCmRDT<RWSet<K>> for RWSet<K>
-where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
-{
-    type Op = Operation<K>;
-
-    fn convert_operation(&self, op: TextOperation) -> Vec<<Self as CmRDT>::Op> {
+    fn convert_delta(&self, op: TextOperation<K>) {
         todo!()
-    }
-}
-
-impl<K> TextOperationToCvRDT<RWSet<K>> for RWSet<K>
-where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
-{
-    fn convert_operation(&self, op: TextOperation) {
-        todo!()
-    }
-}
-
-impl<K> TextOperationToDelta<RWSet<K>> for RWSet<K>
-where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
-{
-    fn convert_operation(&self, op: TextOperation) {
-        todo!()
-    }
-}
-
-impl<K> Semilattice<RWSet<K>> for RWSet<K>
-where
-    K: Eq + Hash + Clone + Ord + std::fmt::Debug + Serialize,
-    Self: CmRDT<Op = Operation<K>>,
-{
-    type Op = Operation<K>;
-
-    fn cmrdt_associative(a: RWSet<K>, b: RWSet<K>, c: RWSet<K>) -> bool
-    where
-        RWSet<K>: CmRDT,
-    {
-        todo!();
-    }
-
-    fn cmrdt_commutative(a: RWSet<K>, b: RWSet<K>) -> bool
-    where
-        RWSet<K>: CmRDT,
-    {
-        todo!();
-    }
-
-    fn cmrdt_idempotent(a: RWSet<K>) -> bool
-    where
-        RWSet<K>: CmRDT,
-    {
-        todo!();
-    }
-
-    fn cvrdt_associative(a: RWSet<K>, b: RWSet<K>, c: RWSet<K>) -> bool
-    where
-        RWSet<K>: CvRDT,
-    {
-        todo!();
-    }
-
-    fn cvrdt_commutative(a: RWSet<K>, b: RWSet<K>) -> bool
-    where
-        RWSet<K>: CvRDT,
-    {
-        todo!();
-    }
-
-    fn cvrdt_idempotent(a: RWSet<K>) -> bool
-    where
-        RWSet<K>: CvRDT,
-    {
-        todo!();
-    }
-
-    fn delta_associative(a: RWSet<K>, b: RWSet<K>, c: RWSet<K>) -> bool
-    where
-        RWSet<K>: Delta,
-    {
-        todo!();
-    }
-
-    fn delta_commutative(a: RWSet<K>, b: RWSet<K>) -> bool
-    where
-        RWSet<K>: Delta,
-    {
-        todo!();
-    }
-
-    fn delta_idempotent(a: RWSet<K>) -> bool
-    where
-        RWSet<K>: Delta,
-    {
-        todo!();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_semilattice() {
-        // let mut a = RWSet::new();
-        // let mut b = RWSet::new();
-        // let mut c = RWSet::new();
-        // assert!(RWSet::cmrdt_associative(a.clone(), b.clone(), c.clone()));
-        // assert!(RWSet::cmrdt_commutative(a.clone(), b.clone()));
-        // assert!(RWSet::cmrdt_idempotent(a.clone()));
-        // assert!(RWSet::cvrdt_associative(a.clone(), b.clone(), c.clone()));
-        // assert!(RWSet::cvrdt_commutative(a.clone(), b.clone()));
-        // assert!(RWSet::cvrdt_idempotent(a.clone()));
-        // assert!(RWSet::delta_associative(a.clone(), b.clone(), c.clone()));
-        // assert!(RWSet::delta_commutative(a.clone(), b.clone()));
-        // assert!(RWSet::delta_idempotent(a.clone()));
     }
 }
