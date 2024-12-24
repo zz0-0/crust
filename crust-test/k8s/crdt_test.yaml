@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crust-test
+spec:
+  selector:
+    matchLabels:
+      app: crust-test
+  template:
+    metadata:
+      labels:
+        app: crust-test
+    spec:
+      containers:
+        - name: crust-test
+          image: crust-test
+          imagePullPolicy: Never
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8080

@@ -3,12 +3,5 @@ name = "crust"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
-tokio = { version = "1.42.0", features = ["full"] }
-serde = { version = "1.0.216", features = ["derive"] }
-serde_json = "1.0.134"
-axum = "0.7.9"
-reqwest = { version = "0.12.9", features = ["json"] }
-kube = { version = "0.97.0", features = ["runtime", "derive"] }
-k8s-openapi = { version = "0.23.0", features = ["latest"] }
-lazy_static = "1.4.0"
+[workspace]
+members = ["crust-core", "crust-http", "crust-test"]

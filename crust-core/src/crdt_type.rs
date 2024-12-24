@@ -88,8 +88,6 @@ where
     K: Eq + Hash + Clone + Ord + Serialize,
     DataType<K>: Clone,
 {
-    // pub fn get_or_create(crdt_type: String) -> Self {}
-
     pub fn new(crdt_type: String) -> Self {
         match crdt_type.as_str() {
             "gcounter" => DataType::Gcounter(GCounter::<K>::new()),

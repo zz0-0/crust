@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: crdt-config
+  name: crdt-http-config
 data:
   REPLICA_COUNT: "3"
-  SERVICE_NAME: "crdt-service"
+  SERVICE_NAME: "crdt-http-service"

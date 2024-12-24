@@ -306,11 +306,36 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 [[package]]
 name = "crust"
 version = "0.1.0"
+
+[[package]]
+name = "crust-core"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "crust-http"
+version = "0.1.0"
 dependencies = [
  "axum",
+ "crust-core",
+ "once_cell",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "crust-test"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "crust-core",
  "k8s-openapi",
  "kube",
- "lazy_static",
  "reqwest",
  "serde",
  "serde_json",
@@ -1179,12 +1204,6 @@ dependencies = [
  "tokio-util",
  "tracing",
 ]
-
-[[package]]
-name = "lazy_static"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"

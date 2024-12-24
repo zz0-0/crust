@@ -1,27 +1,27 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: crust
+  name: crust-http
 spec:
   selector:
     matchLabels:
-      app: crust
-  serviceName: crdt-service
+      app: crust-http
+  serviceName: crdt-http-service
   replicas: 3
   template:
     metadata:
       labels:
-        app: crust
+        app: crust-http
     spec:
       containers:
-        - name: crust
-          image: crust
+        - name: crust-http
+          image: crust-http
           imagePullPolicy: Never
           ports:
             - containerPort: 3000
           envFrom:
             - configMapRef:
-                name: crdt-config
+                name: crdt-http-config
           env:
             - name: POD_NAME
               valueFrom:

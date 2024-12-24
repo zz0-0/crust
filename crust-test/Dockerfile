@@ -5,7 +5,7 @@ RUN apt-get update && \
     apt-get install -y ca-certificates curl git && \
     update-ca-certificates
 
-WORKDIR /usr/src/crust
+WORKDIR /usr/src/crust_test
 COPY . .
 
 # Build the release binary
@@ -20,9 +20,9 @@ RUN apt-get update && \
     update-ca-certificates
 
 # Copy only the compiled binary from the Builder stage
-COPY --from=Builder /usr/src/crust/target/release/crust /app/crust
+COPY --from=Builder /usr/src/crust/target/release/crust_test /app/crust_test
 
-EXPOSE 3000
+EXPOSE 8080
 
 # Run the binary
-CMD ["/app/crust"]
+CMD ["/app/crust-test"]
