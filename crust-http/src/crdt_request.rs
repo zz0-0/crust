@@ -30,7 +30,7 @@ impl DataTypeExt for StringDataType {
     }
 }
 
-pub fn send_operation(
+pub async fn send_operation(
     Path((crdt_type, operation)): Path<(String, String)>,
     Json(message): Json<Message>,
 ) -> Json<Value> {
@@ -55,6 +55,11 @@ pub fn send_operation(
     Json(json!(data_type.to_string()))
 }
 
-pub fn send_state() {}
+pub async fn send_state() {}
 
-pub fn send_delta() {}
+pub async fn send_delta() {}
+
+pub async fn info() -> Json<Value> {
+    let instance = CRDT_INSTANCE.lock().unwrap();
+    Json(json!(instance.as_ref().unwrap().to_string()))
+}

@@ -6,7 +6,7 @@ spec:
   selector:
     matchLabels:
       app: crust-http
-  serviceName: crdt-http-service
+  serviceName: crust-http-service
   replicas: 3
   template:
     metadata:
@@ -21,7 +21,7 @@ spec:
             - containerPort: 3000
           envFrom:
             - configMapRef:
-                name: crdt-http-config
+                name: crust-http-config
           env:
             - name: POD_NAME
               valueFrom:

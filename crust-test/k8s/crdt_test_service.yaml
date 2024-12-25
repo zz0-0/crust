@@ -5,6 +5,7 @@ metadata:
 spec:
   selector:
     app: crust-test
+  type: ClusterIP
   ports:
     - port: 8080
       targetPort: 8080

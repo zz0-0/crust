@@ -1,16 +1,18 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: crust-test
 spec:
   selector:
     matchLabels:
       app: crust-test
+  serviceName: crust-test-service
   template:
     metadata:
       labels:
         app: crust-test
     spec:
+      serviceAccountName: crust-test-account
       containers:
         - name: crust-test
           image: crust-test
@@ -21,3 +23,12 @@ spec:
               cpu: "500m"
           ports:
             - containerPort: 8080
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace

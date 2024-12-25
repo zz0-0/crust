@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: crdt-http-config
+  name: crust-http-config
 data:
   REPLICA_COUNT: "3"
-  SERVICE_NAME: "crdt-http-service"
+  SERVICE_NAME: "crust-http-service"
