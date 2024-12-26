@@ -20,7 +20,7 @@ pub enum Operation<K> {
 
 impl<K> GCounter<K>
 where
-    K: Eq + Hash + Serialize,
+    K: Eq + Hash + Serialize + for<'a> Deserialize<'a>,
 {
     pub fn new() -> Self {
         Self {
@@ -30,6 +30,10 @@ where
 
     pub fn to_string(&self) -> String {
         serde_json::to_string(&self).unwrap()
+    }
+
+    pub fn to_crdt(str: String) -> Self {
+        serde_json::from_str(&str).unwrap()
     }
 
     pub fn value(&self) -> u64 {
@@ -71,17 +75,11 @@ impl<K> CvRDT for GCounter<K>
 where
     K: Eq + Hash + Clone,
 {
-    type Value = K;
-
     fn merge(&mut self, other: &Self) {
         for (k, v) in &other.counter {
             let current_count = self.counter.entry(k.clone()).or_insert(0);
             *current_count = (*current_count).max(*v);
         }
-    }
-
-    fn convert_state(&self, op: TextOperation<K>) {
-        todo!()
     }
 }
 

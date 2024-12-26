@@ -41,6 +41,7 @@ pub async fn send_operation(
         },
         "delete" => TextOperation::Delete {
             position: message.position,
+            value: message.text,
         },
         _ => TextOperation::Insert {
             position: message.position,
@@ -55,7 +56,13 @@ pub async fn send_operation(
     Json(json!(data_type.to_string()))
 }
 
-pub async fn send_state() {}
+pub async fn send_state(Path((crdt_type, state)): Path<(String, String)>) -> Json<Value> {
+    let mut data_type: DataType<String> = DataType::get_or_create(crdt_type.clone());
+    let mut data_type2: DataType<String> = DataType::new(crdt_type.clone());
+    data_type2.to_crdt(state);
+    data_type.merge(data_type2);
+    Json(json!(data_type.to_string()))
+}
 
 pub async fn send_delta() {}
 

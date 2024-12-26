@@ -23,7 +23,7 @@ pub enum Operation<K> {
 
 impl<K> TPGraph<K>
 where
-    K: Eq + Hash + Clone + Ord + Serialize,
+    K: Eq + Hash + Clone + Ord + Serialize + for<'a> Deserialize<'a>,
 {
     pub fn new() -> Self {
         Self {
@@ -35,6 +35,11 @@ where
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
+
+    pub fn to_crdt(str: String) -> Self {
+        serde_json::from_str(&str).unwrap()
+    }
+
     pub fn value(&self) -> (Vec<(K, bool)>, Vec<(K, K, bool)>) {
         let mut vertices: Vec<(K, bool)> = self.vertices.iter().cloned().collect();
         let mut edges: Vec<(K, K, bool)> = self.edges.iter().cloned().collect();
@@ -62,7 +67,7 @@ where
 
 impl<K> CmRDT for TPGraph<K>
 where
-    K: Eq + Hash + Clone + Ord + Serialize,
+    K: Eq + Hash + Clone + Ord + Serialize + for<'a> Deserialize<'a>,
 {
     type Op = Operation<K>;
     type Value = K;
@@ -101,8 +106,6 @@ impl<K> CvRDT for TPGraph<K>
 where
     K: Eq + Hash + Clone,
 {
-    type Value = K;
-
     fn merge(&mut self, other: &Self) {
         for (k, tombstone) in &other.vertices {
             let current = self.vertices.iter().find(|(key, _)| key == k);
@@ -118,10 +121,6 @@ where
                 }
             }
         }
-    }
-
-    fn convert_state(&self, op: TextOperation<K>) {
-        todo!()
     }
 }
 

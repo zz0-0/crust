@@ -20,7 +20,7 @@ pub enum Operation<K> {
 
 impl<K> PNCounter<K>
 where
-    K: Eq + Hash + Serialize,
+    K: Eq + Hash + Serialize + for<'a> Deserialize<'a>,
 {
     pub fn new() -> Self {
         Self {
@@ -31,6 +31,10 @@ where
 
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
+    }
+
+    pub fn to_crdt(str: String) -> Self {
+        serde_json::from_str(&str).unwrap()
     }
 
     pub fn value(&self) -> i64 {
@@ -69,7 +73,20 @@ where
     }
 
     fn convert_operation(&self, op: TextOperation<K>) -> Vec<Self::Op> {
-        todo!()
+        match op {
+            TextOperation::Insert { position: _, value } => {
+                vec![Self::Op::Increment {
+                    key: value,
+                    value: 1,
+                }]
+            }
+            TextOperation::Delete { position: _, value } => {
+                vec![Self::Op::Decrement {
+                    key: value,
+                    value: 1,
+                }]
+            }
+        }
     }
 }
 
@@ -77,8 +94,6 @@ impl<K> CvRDT for PNCounter<K>
 where
     K: Eq + Hash + Clone,
 {
-    type Value = K;
-
     fn merge(&mut self, other: &Self) {
         for (k, v) in &other.p {
             let current_count = self.p.entry(k.clone()).or_insert(0);
@@ -88,10 +103,6 @@ where
             let current_count = self.n.entry(k.clone()).or_insert(0);
             *current_count = (*current_count).max(*v);
         }
-    }
-
-    fn convert_state(&self, op: TextOperation<K>) {
-        todo!()
     }
 }
 

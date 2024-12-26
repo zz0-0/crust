@@ -21,7 +21,7 @@ pub enum Operation<K> {
 
 impl<K> LWWRegister<K>
 where
-    K: Clone + Serialize,
+    K: Clone + Serialize + for<'a> Deserialize<'a>,
 {
     pub fn new() -> Self {
         Self {
@@ -32,6 +32,10 @@ where
 
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
+    }
+
+    pub fn to_crdt(str: String) -> Self {
+        serde_json::from_str(&str).unwrap()
     }
 
     pub fn read(&self) -> Option<K> {
@@ -75,8 +79,6 @@ impl<K> CvRDT for LWWRegister<K>
 where
     K: Clone,
 {
-    type Value = K;
-
     fn merge(&mut self, other: &Self) {
         match self.timestamp.cmp(&other.timestamp) {
             std::cmp::Ordering::Less => {
@@ -88,10 +90,6 @@ where
             }
             _ => {}
         }
-    }
-
-    fn convert_state(&self, op: TextOperation<K>) {
-        todo!()
     }
 }
 

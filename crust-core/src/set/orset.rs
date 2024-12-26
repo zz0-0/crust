@@ -22,7 +22,7 @@ pub enum Operation<K> {
 
 impl<K> ORSet<K>
 where
-    K: Ord + Clone + Serialize,
+    K: Ord + Clone + Serialize + for<'a> Deserialize<'a>,
 {
     pub fn new() -> Self {
         Self {
@@ -34,6 +34,11 @@ where
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
+
+    pub fn to_crdt(str: String) -> Self {
+        serde_json::from_str(&str).unwrap()
+    }
+
     pub fn insert(&mut self, value: K) {
         self.added.insert(value);
     }
@@ -46,7 +51,7 @@ where
 
 impl<K> CmRDT for ORSet<K>
 where
-    K: Ord + Clone + Serialize,
+    K: Ord + Clone + Serialize + for<'a> Deserialize<'a>,
 {
     type Op = Operation<K>;
     type Value = K;
@@ -71,16 +76,10 @@ impl<K> CvRDT for ORSet<K>
 where
     K: Ord + Clone,
 {
-    type Value = K;
-
     fn merge(&mut self, other: &Self) {
         self.added.extend(other.added.clone());
         self.removed.extend(other.removed.clone());
         self.added.retain(|k| !self.removed.contains(k));
-    }
-
-    fn convert_state(&self, op: TextOperation<K>) {
-        todo!()
     }
 }
 

@@ -20,7 +20,7 @@ pub enum Operation<K> {
 
 impl<K> Logoot<K>
 where
-    K: Clone + Serialize,
+    K: Clone + Serialize + for<'a> Deserialize<'a>,
 {
     pub fn new() -> Self {
         Self {
@@ -31,6 +31,11 @@ where
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
+
+    pub fn to_crdt(str: String) -> Self {
+        serde_json::from_str(&str).unwrap()
+    }
+
     pub fn insert() {}
 
     pub fn delete() {}
@@ -61,8 +66,6 @@ impl<K> CvRDT for Logoot<K>
 where
     K: Clone + Ord,
 {
-    type Value = K;
-
     fn merge(&mut self, other: &Self) {
         let mut merged = self.elements.clone();
 
@@ -77,10 +80,6 @@ where
         }
 
         self.elements = merged;
-    }
-
-    fn convert_state(&self, op: TextOperation<K>) {
-        todo!()
     }
 }
 

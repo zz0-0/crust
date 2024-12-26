@@ -7,8 +7,30 @@ use crate::{
     text_operation::TextOperation,
     tree::{self, merkle_dag_tree::MerkleDAGTree},
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::hash::Hash;
+
+pub const CRDT_TYPES: &[&str] = &[
+    "gcounter",
+    "pncounter",
+    "awgraph",
+    "ggraph",
+    "orgraph",
+    "tpgraph",
+    "lwwregister",
+    "mvregister",
+    "logoot",
+    "lseq",
+    "rga",
+    "awset",
+    "gset",
+    "orset",
+    "rwset",
+    "tpset",
+    "merkledagtree",
+];
+
+pub const OPERATIONS: &[&str] = &["insert"];
 
 pub trait CmRDT {
     type Op;
@@ -18,10 +40,7 @@ pub trait CmRDT {
     fn convert_operation(&self, op: TextOperation<Self::Value>) -> Vec<Self::Op>;
 }
 pub trait CvRDT {
-    type Value;
-
     fn merge(&mut self, other: &Self);
-    fn convert_state(&self, op: TextOperation<Self::Value>);
 }
 pub trait Delta {
     type Value;
@@ -85,7 +104,7 @@ pub enum Operation<K> {
 
 impl<K> DataType<K>
 where
-    K: Eq + Hash + Clone + Ord + Serialize,
+    K: Eq + Hash + Clone + Ord + Serialize + for<'a> Deserialize<'a>,
     DataType<K>: Clone,
 {
     pub fn new(crdt_type: String) -> Self {
@@ -259,6 +278,65 @@ where
             DataType::RWSet(crdt) => crdt.to_string(),
             DataType::TPSet(crdt) => crdt.to_string(),
             DataType::MerkleDAGTree(crdt) => crdt.to_string(),
+        }
+    }
+
+    pub fn to_crdt(&mut self, str: String) {
+        match self {
+            DataType::Gcounter(crdt) => *crdt = GCounter::to_crdt(str),
+            DataType::PNcounter(crdt) => *crdt = PNCounter::to_crdt(str),
+            DataType::AWGraph(crdt) => *crdt = AWGraph::to_crdt(str),
+            DataType::GGraph(crdt) => *crdt = GGraph::to_crdt(str),
+            DataType::ORGraph(crdt) => *crdt = ORGraph::to_crdt(str),
+            DataType::TPGraph(crdt) => *crdt = TPGraph::to_crdt(str),
+            // DataType::CMMap(crdt) => *crdt = CMMap::to_crdt(str),
+            // DataType::LWWMap(crdt) => *crdt = LWWMap::to_crdt(str),
+            // DataType::ORMap(crdt) => *crdt = ORMap::to_crdt(str),
+            // DataType::RMap(crdt) => *crdt = RMap::to_crdt(str),
+            DataType::LWWRegister(crdt) => *crdt = LWWRegister::to_crdt(str),
+            DataType::MVRegister(crdt) => *crdt = MVRegister::to_crdt(str),
+            DataType::Logoot(crdt) => *crdt = Logoot::to_crdt(str),
+            DataType::LSeq(crdt) => *crdt = LSeq::to_crdt(str),
+            DataType::RGA(crdt) => *crdt = RGA::to_crdt(str),
+            DataType::AWSet(crdt) => *crdt = AWSet::to_crdt(str),
+            DataType::GSet(crdt) => *crdt = GSet::to_crdt(str),
+            DataType::ORSet(crdt) => *crdt = ORSet::to_crdt(str),
+            DataType::RWSet(crdt) => *crdt = RWSet::to_crdt(str),
+            DataType::TPSet(crdt) => *crdt = TPSet::to_crdt(str),
+            DataType::MerkleDAGTree(crdt) => *crdt = MerkleDAGTree::to_crdt(str),
+        }
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        match (self, other) {
+            (DataType::Gcounter(crdt), DataType::Gcounter(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::PNcounter(crdt), DataType::PNcounter(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::AWGraph(crdt), DataType::AWGraph(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::GGraph(crdt), DataType::GGraph(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::ORGraph(crdt), DataType::ORGraph(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::TPGraph(crdt), DataType::TPGraph(other_crdt)) => crdt.merge(&other_crdt),
+            // (DataType::CMMap(crdt), DataType::CMMap(other_crdt)) => crdt.merge(&other_crdt),
+            // (DataType::LWWMap(crdt), DataType::LWWMap(other_crdt)) => crdt.merge(&other_crdt),
+            // (DataType::ORMap(crdt), DataType::ORMap(other_crdt)) => crdt.merge(&other_crdt),
+            // (DataType::RMap(crdt), DataType::RMap(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::LWWRegister(crdt), DataType::LWWRegister(other_crdt)) => {
+                crdt.merge(&other_crdt)
+            }
+            (DataType::MVRegister(crdt), DataType::MVRegister(other_crdt)) => {
+                crdt.merge(&other_crdt)
+            }
+            (DataType::Logoot(crdt), DataType::Logoot(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::LSeq(crdt), DataType::LSeq(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::RGA(crdt), DataType::RGA(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::AWSet(crdt), DataType::AWSet(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::GSet(crdt), DataType::GSet(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::ORSet(crdt), DataType::ORSet(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::RWSet(crdt), DataType::RWSet(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::TPSet(crdt), DataType::TPSet(other_crdt)) => crdt.merge(&other_crdt),
+            (DataType::MerkleDAGTree(crdt), DataType::MerkleDAGTree(other_crdt)) => {
+                crdt.merge(&other_crdt)
+            }
+            _ => panic!("Cannot merge different CRDT types"),
         }
     }
 }

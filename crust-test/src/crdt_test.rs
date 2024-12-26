@@ -1,11 +1,15 @@
 use axum::{extract::Path, Json};
-use crust_core::text_operation::Message;
+use crust_core::{
+    crdt_type::{CRDT_TYPES, OPERATIONS},
+    text_operation::Message,
+};
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
     api::{Api, DeleteParams, ListParams, ObjectList},
     Client as KubeClient,
 };
 use reqwest::{Client, Response};
+use serde_json::Value;
 
 pub struct TestController {
     client: Client,
@@ -18,17 +22,14 @@ impl TestController {
         let pods: Api<Pod> = Api::namespaced(kube_client, "default");
         let lp = ListParams::default().labels("app=crust-http");
 
-        // Debug pod list before filtering
         let pod_list = pods.list(&lp).await.unwrap();
         println!("Total pods found: {}", pod_list.items.len());
 
-        // Debug each pod's status
         for pod in &pod_list.items {
             println!("Pod: {:?}", pod.metadata.name);
             println!("Status: {:?}", pod.status.as_ref().map(|s| &s.phase));
         }
 
-        // Only include Running pods
         let running_pods: Vec<_> = pod_list
             .items
             .iter()
@@ -100,6 +101,24 @@ impl TestController {
         self.client.get(&url).json(message).send().await.unwrap()
     }
 
+    async fn send_state_to_single_pod(&self, pod_name: &str, state: &str) -> Response {
+        let pod_ip = self
+            .pod_list
+            .items
+            .iter()
+            .find(|pod| {
+                pod.metadata
+                    .name
+                    .as_ref()
+                    .map_or(false, |name| name == pod_name)
+            })
+            .and_then(|pod| pod.status.as_ref())
+            .and_then(|status| status.pod_ip.as_ref())
+            .expect("Pod IP not found");
+        let url = format!("http://{}:3000/crust/state", pod_ip);
+        self.client.get(&url).json(state).send().await.unwrap()
+    }
+
     fn get_available_pods(&self, count: usize) -> Vec<String> {
         let pods = self
             .pod_list
@@ -158,20 +177,54 @@ impl TestController {
 
     // cmrdt
 
+    pub async fn test_all_cmrdt(&self) -> Json<Value> {
+        let mut result = Vec::new();
+        for crdt_type in CRDT_TYPES {
+            for operation in OPERATIONS {
+                let message = self
+                    .test_cmrdt_semilattice_internal(
+                        crdt_type.to_string().clone(),
+                        operation.to_string().clone(),
+                    )
+                    .await;
+                result.push(message);
+            }
+        }
+        Json(result.into())
+    }
+
+    pub async fn test_cmrdt_semilattice_internal(
+        &self,
+        crdt_type: String,
+        operation: String,
+    ) -> String {
+        let associative = self
+            .test_cmrdt_associative(crdt_type.clone(), operation.clone())
+            .await;
+        let commutative = self
+            .test_cmrdt_commutative(crdt_type.clone(), operation.clone())
+            .await;
+        let idempotent = self
+            .test_cmrdt_idempotent(crdt_type.clone(), operation.clone())
+            .await;
+
+        let result = associative && commutative && idempotent;
+        let message = format!(
+            "CRDT type: {}, Operation: {} - Associative: {}, Commutative: {}, Idempotent: {}, Semilattice: {}",
+            crdt_type, operation, associative, commutative, idempotent, result
+        );
+        println!("{}", message);
+        message
+    }
+
     pub async fn test_cmrdt_semilattice(
         &self,
         Path((crdt_type, operation)): Path<(String, String)>,
-    ) -> Json<bool> {
-        axum::Json(
-            self.test_cmrdt_associative(crdt_type.clone(), operation.clone())
-                .await
-                && self
-                    .test_cmrdt_commutative(crdt_type.clone(), operation.clone())
-                    .await
-                && self
-                    .test_cmrdt_idempotent(crdt_type.clone(), operation.clone())
-                    .await,
-        )
+    ) -> Json<String> {
+        let message = self
+            .test_cmrdt_semilattice_internal(crdt_type, operation)
+            .await;
+        Json(message)
     }
 
     pub async fn test_cmrdt_associative(&self, crdt_type: String, operation: String) -> bool {
@@ -269,49 +322,104 @@ impl TestController {
 
     pub async fn test_cvrdt_semilattice(
         &self,
-        Path((crdt_type, operation)): Path<(String, String)>,
+        Path((crdt_type, state)): Path<(String, String)>,
     ) -> Json<bool> {
         axum::Json(
-            self.test_cvrdt_associative().await
-                && self.test_cvrdt_commutative().await
-                && self.test_cvrdt_idempotent().await,
+            self.test_cvrdt_associative(crdt_type.clone(), state.clone())
+                .await
+                && self
+                    .test_cvrdt_commutative(crdt_type.clone(), state.clone())
+                    .await
+                && self
+                    .test_cvrdt_idempotent(crdt_type.clone(), state.clone())
+                    .await,
         )
     }
 
-    pub async fn test_cvrdt_associative(&self) -> bool {
-        false
+    pub async fn test_cvrdt_associative(&self, crdt_type: String, state: String) -> bool {
+        let pods = self.get_available_pods(2);
+
+        self.reset_all_pods().await;
+
+        // self.send_state_to_single_pod(&pods[0], state);
+        // self.send_state_to_single_pod(&pods[1], state);
+
+        let result1 = self.get_pod_state(&pods[0]).await;
+        let result2 = self.get_pod_state(&pods[1]).await;
+
+        result1 == result2
     }
 
-    pub async fn test_cvrdt_commutative(&self) -> bool {
-        false
+    pub async fn test_cvrdt_commutative(&self, crdt_type: String, state: String) -> bool {
+        let pods = self.get_available_pods(2);
+
+        self.reset_all_pods().await;
+
+        let result1 = self.get_pod_state(&pods[0]).await;
+        let result2 = self.get_pod_state(&pods[1]).await;
+
+        result1 == result2
     }
 
-    pub async fn test_cvrdt_idempotent(&self) -> bool {
-        false
+    pub async fn test_cvrdt_idempotent(&self, crdt_type: String, state: String) -> bool {
+        let pods = self.get_available_pods(2);
+
+        self.reset_all_pods().await;
+
+        let result1 = self.get_pod_state(&pods[0]).await;
+        let result2 = self.get_pod_state(&pods[1]).await;
+
+        result1 == result2
     }
 
     // delta
 
     pub async fn test_delta_semilattice(
         &self,
-        Path((crdt_type, operation)): Path<(String, String)>,
+        Path((crdt_type, state)): Path<(String, String)>,
     ) -> Json<bool> {
         axum::Json(
-            self.test_delta_associative().await
-                && self.test_delta_commutative().await
-                && self.test_delta_idempotent().await,
+            self.test_delta_associative(crdt_type.clone(), state.clone())
+                .await
+                && self
+                    .test_delta_commutative(crdt_type.clone(), state.clone())
+                    .await
+                && self
+                    .test_delta_idempotent(crdt_type.clone(), state.clone())
+                    .await,
         )
     }
 
-    pub async fn test_delta_associative(&self) -> bool {
-        false
+    pub async fn test_delta_associative(&self, crdt_type: String, state: String) -> bool {
+        let pods = self.get_available_pods(2);
+
+        self.reset_all_pods().await;
+
+        let result1 = self.get_pod_state(&pods[0]).await;
+        let result2 = self.get_pod_state(&pods[1]).await;
+
+        result1 == result2
     }
 
-    pub async fn test_delta_commutative(&self) -> bool {
-        false
+    pub async fn test_delta_commutative(&self, crdt_type: String, state: String) -> bool {
+        let pods = self.get_available_pods(2);
+
+        self.reset_all_pods().await;
+
+        let result1 = self.get_pod_state(&pods[0]).await;
+        let result2 = self.get_pod_state(&pods[1]).await;
+
+        result1 == result2
     }
 
-    pub async fn test_delta_idempotent(&self) -> bool {
-        false
+    pub async fn test_delta_idempotent(&self, crdt_type: String, state: String) -> bool {
+        let pods = self.get_available_pods(2);
+
+        self.reset_all_pods().await;
+
+        let result1 = self.get_pod_state(&pods[0]).await;
+        let result2 = self.get_pod_state(&pods[1]).await;
+
+        result1 == result2
     }
 }

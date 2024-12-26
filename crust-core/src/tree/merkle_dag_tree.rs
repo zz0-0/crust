@@ -23,7 +23,7 @@ pub enum Operation<K> {
 
 impl<K> MerkleDAGTree<K>
 where
-    K: Eq + Hash + Clone + Serialize,
+    K: Eq + Hash + Clone + Serialize + for<'a> Deserialize<'a>,
 {
     pub fn new() -> Self {
         Self {
@@ -35,6 +35,11 @@ where
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
+
+    pub fn to_crdt(str: String) -> Self {
+        serde_json::from_str(&str).unwrap()
+    }
+
     pub fn add_edge() {}
 
     pub fn add_vertex() {}
@@ -65,13 +70,7 @@ impl<K> CvRDT for MerkleDAGTree<K>
 where
     K: Eq + Hash + Clone,
 {
-    type Value = K;
-
     fn merge(&mut self, other: &Self) {
-        todo!()
-    }
-
-    fn convert_state(&self, op: TextOperation<K>) {
         todo!()
     }
 }

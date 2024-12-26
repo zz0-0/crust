@@ -20,7 +20,7 @@ pub enum Operation<K> {
 
 impl<K> MVRegister<K>
 where
-    K: Eq + Hash + Clone + Serialize,
+    K: Eq + Hash + Clone + Serialize + for<'a> Deserialize<'a>,
 {
     pub fn new() -> Self {
         Self {
@@ -31,6 +31,11 @@ where
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
+
+    pub fn to_crdt(str: String) -> Self {
+        serde_json::from_str(&str).unwrap()
+    }
+
     pub fn update(&mut self, value: K) {
         self.values.insert((value, get_current_timestamp()));
     }
@@ -60,18 +65,12 @@ impl<K> CvRDT for MVRegister<K>
 where
     K: Eq + Hash + Clone,
 {
-    type Value = K;
-
     fn merge(&mut self, other: &Self) {
         for entry in other.values.iter() {
             if !self.values.contains(entry) {
                 self.values.insert(entry.clone());
             }
         }
-    }
-
-    fn convert_state(&self, op: TextOperation<K>) {
-        todo!()
     }
 }
 

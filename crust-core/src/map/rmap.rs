@@ -23,8 +23,8 @@ pub enum Operation<K, V> {
 
 impl<K, V> RMap<K, V>
 where
-    K: Eq + Hash + Serialize,
-    V: Serialize,
+    K: Eq + Hash + Serialize + for<'a> Deserialize<'a>,
+    V: Serialize + for<'a> Deserialize<'a>,
 {
     pub fn new() -> Self {
         Self {
@@ -35,6 +35,11 @@ where
     pub fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
+
+    pub fn to_crdt(str: String) -> Self {
+        serde_json::from_str(&str).unwrap()
+    }
+
     pub fn value() {}
 
     pub fn put() {}
@@ -67,13 +72,7 @@ impl<K, V> CvRDT for RMap<K, V>
 where
     K: Eq + Hash,
 {
-    type Value = K;
-
     fn merge(&mut self, other: &Self) {
-        todo!()
-    }
-
-    fn convert_state(&self, op: TextOperation<K>) {
         todo!()
     }
 }
