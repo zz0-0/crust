@@ -2,8 +2,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 pub mod counter;
 pub mod crdt_type;
+pub mod crdt_validation;
 pub mod graph;
-pub mod map;
+// pub mod map;
 pub mod register;
 pub mod sequence;
 pub mod set;

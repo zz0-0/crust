@@ -1,20 +1,8 @@
-use std::sync::Mutex;
-
-use axum::{extract::Path, Json};
-
-use once_cell::sync::Lazy;
-use serde_json::{json, Value};
-
-use crust_core::{
-    crdt_type::DataType,
-    text_operation::{Message, TextOperation},
-};
-
 static CRDT_INSTANCE: Lazy<Mutex<Option<StringDataType>>> = Lazy::new(|| Mutex::new(None));
 
 type StringDataType = DataType<String>;
-type CharacterDataType = DataType<char>;
-type NumberDataType = DataType<u64>;
+// type CharacterDataType = DataType<char>;
+// type NumberDataType = DataType<u64>;
 
 trait DataTypeExt {
     fn get_or_create(crdt_type: String) -> Self;
@@ -30,10 +18,22 @@ impl DataTypeExt for StringDataType {
     }
 }
 
+use std::sync::Mutex;
+
+use axum::{extract::Path, response::IntoResponse, Json};
+use crust_core::{
+    crdt_type::DataType,
+    get_current_timestamp,
+    text_operation::{Message, TextOperation},
+};
+use once_cell::sync::Lazy;
+use reqwest::StatusCode;
+use serde_json::json;
+
 pub async fn send_operation(
     Path((crdt_type, operation)): Path<(String, String)>,
     Json(message): Json<Message>,
-) -> Json<Value> {
+) -> impl IntoResponse {
     let text_operation = match operation.as_str() {
         "insert" => TextOperation::Insert {
             position: message.position,
@@ -53,20 +53,111 @@ pub async fn send_operation(
     for op in ops {
         data_type.apply_operation(op);
     }
-    Json(json!(data_type.to_string()))
+    (StatusCode::OK, Json(json!(data_type.to_string())))
 }
 
-pub async fn send_state(Path((crdt_type, state)): Path<(String, String)>) -> Json<Value> {
+pub async fn send_operation_with_timestamp(
+    Path((crdt_type, operation)): Path<(String, String)>,
+    Json(message): Json<Message>,
+) -> impl IntoResponse {
+    let text_operation = match operation.as_str() {
+        "insert" => TextOperation::Insert {
+            position: message.position,
+            value: message.text,
+        },
+        "delete" => TextOperation::Delete {
+            position: message.position,
+            value: message.text,
+        },
+        _ => TextOperation::Insert {
+            position: message.position,
+            value: message.text,
+        },
+    };
+    let mut data_type: DataType<String> = DataType::get_or_create(crdt_type);
+    let ops = data_type.convert_operation(text_operation);
+    let timestamp1 = get_current_timestamp();
+    for op in ops {
+        data_type.apply_operation(op);
+    }
+    let timestamp2 = get_current_timestamp();
+    (
+        StatusCode::OK,
+        Json(json!({
+            "state": data_type.to_string(),
+            "timestamp": {
+                "start": timestamp1,
+                "end": timestamp2
+            },
+            "timespend": timestamp2 - timestamp1
+        })),
+    )
+}
+
+pub async fn send_state(Path((crdt_type, state)): Path<(String, String)>) -> impl IntoResponse {
     let mut data_type: DataType<String> = DataType::get_or_create(crdt_type.clone());
     let mut data_type2: DataType<String> = DataType::new(crdt_type.clone());
     data_type2.to_crdt(state);
     data_type.merge(data_type2);
-    Json(json!(data_type.to_string()))
+    (StatusCode::OK, Json(json!(data_type.to_string())))
 }
 
-pub async fn send_delta() {}
+pub async fn send_state_with_timestamp(
+    Path((crdt_type, state)): Path<(String, String)>,
+) -> impl IntoResponse {
+    let mut data_type: DataType<String> = DataType::get_or_create(crdt_type.clone());
+    let mut data_type2: DataType<String> = DataType::new(crdt_type.clone());
+    data_type2.to_crdt(state);
+    let timestamp1 = get_current_timestamp();
+    data_type.merge(data_type2);
+    let timestamp2 = get_current_timestamp();
+    (
+        StatusCode::OK,
+        Json(json!({
+            "state": data_type.to_string(),
+            "timestamp": {
+                "start": timestamp1,
+                "end": timestamp2
+            },
+            "timespend": timestamp2 - timestamp1
+        })),
+    )
+}
 
-pub async fn info() -> Json<Value> {
+pub async fn send_delta(Path((crdt_type, delta)): Path<(String, String)>) -> impl IntoResponse {
+    let mut data_type: DataType<String> = DataType::get_or_create(crdt_type.clone());
+    let mut data_type2 = DataType::new(crdt_type.clone());
+    let delta = data_type2.to_delta(delta);
+    data_type.merge_delta(delta);
+    (StatusCode::OK, Json(json!(data_type.to_string())))
+}
+
+pub async fn send_delta_with_timestamp(
+    Path((crdt_type, delta)): Path<(String, String)>,
+) -> impl IntoResponse {
+    let mut data_type: DataType<String> = DataType::get_or_create(crdt_type.clone());
+    let mut data_type2 = DataType::new(crdt_type.clone());
+    let delta = data_type2.to_delta(delta);
+    let timestamp1 = get_current_timestamp();
+    data_type.merge_delta(delta);
+    let timestamp2 = get_current_timestamp();
+    (
+        StatusCode::OK,
+        Json(json!({
+            "state": data_type.to_string(),
+            "timestamp": {
+                "start": timestamp1,
+                "end": timestamp2
+            },
+            "timespend": timestamp2 - timestamp1
+        })),
+    )
+}
+
+pub async fn info() -> impl IntoResponse {
     let instance = CRDT_INSTANCE.lock().unwrap();
-    Json(json!(instance.as_ref().unwrap().to_string()))
+    (
+        StatusCode::OK,
+        Json(json!(instance.as_ref().unwrap().to_string())),
+    )
 }
