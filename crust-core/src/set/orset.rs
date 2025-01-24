@@ -14,6 +14,7 @@ where
     K: Eq + Hash + Ord + Clone,
 {
     elements: BTreeMap<K, HashSet<(u128, bool)>>,
+    previous_elements: BTreeMap<K, HashSet<(u128, bool)>>,
 }
 
 #[derive(Clone)]
@@ -29,6 +30,7 @@ where
     pub fn new() -> Self {
         Self {
             elements: BTreeMap::new(),
+            previous_elements: BTreeMap::new(),
         }
     }
 
@@ -100,6 +102,10 @@ where
             } => vec![],
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for ORSet<K>
@@ -115,6 +121,10 @@ where
             local_tags.extend(tags.iter().cloned());
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for ORSet<K>
@@ -123,10 +133,10 @@ where
 {
     type De = ORSet<K>;
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         let mut delta = ORSet::new();
         for (element, history) in self.elements.iter() {
-            let since_history = since.elements.get(element);
+            let since_history = self.previous_elements.get(element);
             let new_history: HashSet<_> = history
                 .iter()
                 .filter(|(ts, _)| {
@@ -145,7 +155,7 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: Self::De) {
+    fn merge_delta(&mut self, delta: &Self::De) {
         for (element, history) in delta.elements.iter() {
             let local_history = self
                 .elements
@@ -153,6 +163,10 @@ where
                 .or_insert_with(HashSet::new);
             local_history.extend(history.iter().cloned());
         }
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 

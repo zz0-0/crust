@@ -15,6 +15,8 @@ where
 {
     vertices: HashMap<K, HashSet<(u128, bool)>>,
     edges: HashMap<(K, K), HashSet<(u128, bool)>>,
+    previous_vertices: HashMap<K, HashSet<(u128, bool)>>,
+    previous_edges: HashMap<(K, K), HashSet<(u128, bool)>>,
 }
 
 #[derive(Clone)]
@@ -33,6 +35,8 @@ where
         Self {
             vertices: HashMap::new(),
             edges: HashMap::new(),
+            previous_vertices: HashMap::new(),
+            previous_edges: HashMap::new(),
         }
     }
 
@@ -163,6 +167,10 @@ where
             } => vec![],
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for ORGraph<K>
@@ -183,6 +191,10 @@ where
                 .extend(history.clone());
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for ORGraph<K>
@@ -191,11 +203,11 @@ where
 {
     type De = ORGraph<K>;
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         let mut delta = ORGraph::new();
 
         for (vertex, history) in &self.vertices {
-            let since_history = since.vertices.get(vertex);
+            let since_history = self.previous_vertices.get(vertex);
             let new_history: HashSet<_> = history
                 .iter()
                 .filter(|h| match since_history {
@@ -209,7 +221,7 @@ where
             }
         }
         for (edge, history) in &self.edges {
-            let since_history = since.edges.get(edge);
+            let since_history = self.previous_edges.get(edge);
             let new_history: HashSet<_> = history
                 .iter()
                 .filter(|h| match since_history {
@@ -226,7 +238,7 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: Self::De) {
+    fn merge_delta(&mut self, delta: &Self::De) {
         for (vertex, history) in &delta.vertices {
             self.vertices
                 .entry(vertex.clone())
@@ -239,6 +251,10 @@ where
                 .or_insert(HashSet::new())
                 .extend(history.clone());
         }
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 
@@ -337,14 +353,16 @@ where
         de3: <ORGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
-        a1.merge_delta(de3.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
+        a1.merge_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = ORGraph {
             vertices: de2.vertices.clone(),
             edges: de2.edges.clone(),
+            previous_vertices: de2.previous_vertices.clone(),
+            previous_edges: de2.previous_edges.clone(),
         };
 
         for (vertex, history) in de3.vertices {
@@ -363,8 +381,8 @@ where
                 .extend(history);
         }
 
-        a2.merge_delta(de1);
-        a2.merge_delta(combined_delta);
+        a2.merge_delta(&de1);
+        a2.merge_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -376,21 +394,21 @@ where
         de2: <ORGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de2);
-        a2.merge_delta(de1);
+        a2.merge_delta(&de2);
+        a2.merge_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: ORGraph<K>, de1: <ORGraph<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de1.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de1.clone());
+        a2.merge_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
@@ -502,11 +520,11 @@ mod tests {
         let mut delta_graph = g1.clone();
         delta_graph.add_vertex("x".to_string(), timpstamp + 6);
         delta_graph.add_edge("x".to_string(), "b".to_string(), timpstamp + 7);
-        let delta1 = delta_graph.generate_delta(&g1);
+        let delta1 = delta_graph.generate_delta();
         delta_graph.add_vertex("y".to_string(), timpstamp + 8);
-        let delta2 = delta_graph.generate_delta(&g1);
+        let delta2 = delta_graph.generate_delta();
         delta_graph.add_edge("y".to_string(), "x".to_string(), timpstamp + 9);
-        let delta3 = delta_graph.generate_delta(&g1);
+        let delta3 = delta_graph.generate_delta();
 
         assert!(ORGraph::<String>::delta_associativity(
             g1.clone(),

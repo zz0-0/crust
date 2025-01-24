@@ -26,8 +26,12 @@ where
 {
     vertices: HashMap<K, u128>,
     edges: HashMap<(K, K), u128>,
+    previous_vertices: HashMap<K, u128>,
+    previsou_edges: HashMap<(K, K), u128>,
     removed_vertices: HashMap<K, u128>,
     removed_edges: HashMap<(K, K), u128>,
+    previous_removed_vertices: HashMap<K, u128>,
+    previous_removed_edges: HashMap<(K, K), u128>,
 }
 
 #[derive(Clone)]
@@ -46,8 +50,12 @@ where
         Self {
             vertices: HashMap::new(),
             edges: HashMap::new(),
+            previous_vertices: HashMap::new(),
+            previsou_edges: HashMap::new(),
             removed_vertices: HashMap::new(),
             removed_edges: HashMap::new(),
+            previous_removed_vertices: HashMap::new(),
+            previous_removed_edges: HashMap::new(),
         }
     }
 
@@ -164,6 +172,10 @@ where
             }
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for AWGraph<K>
@@ -242,6 +254,10 @@ where
             }
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for AWGraph<K>
@@ -250,10 +266,11 @@ where
 {
     type De = AWGraph<K>;
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         let mut delta = AWGraph::new();
         for (vertex, &add_ts) in &self.vertices {
-            if !since.vertices.contains_key(vertex) || since.vertices.get(vertex).unwrap() < &add_ts
+            if !self.previous_vertices.contains_key(vertex)
+                || self.previous_vertices.get(vertex).unwrap() < &add_ts
             {
                 delta.vertices.insert(vertex.clone(), add_ts);
             }
@@ -261,8 +278,8 @@ where
 
         // Vertices removed since `since`
         for (vertex, &remove_ts) in &self.removed_vertices {
-            if !since.removed_vertices.contains_key(vertex)
-                || since.removed_vertices.get(vertex).unwrap() < &remove_ts
+            if !self.previous_removed_vertices.contains_key(vertex)
+                || self.previous_removed_vertices.get(vertex).unwrap() < &remove_ts
             {
                 delta.removed_vertices.insert(vertex.clone(), remove_ts);
             }
@@ -270,8 +287,14 @@ where
 
         // Edges added since `since`
         for ((from, to), &add_ts) in &self.edges {
-            if !since.edges.contains_key(&(from.clone(), to.clone()))
-                || since.edges.get(&(from.clone(), to.clone())).unwrap() < &add_ts
+            if !self
+                .previsou_edges
+                .contains_key(&(from.clone(), to.clone()))
+                || self
+                    .previsou_edges
+                    .get(&(from.clone(), to.clone()))
+                    .unwrap()
+                    < &add_ts
             {
                 delta.edges.insert((from.clone(), to.clone()), add_ts);
             }
@@ -279,11 +302,11 @@ where
 
         // Edges removed since `since`
         for ((from, to), &remove_ts) in &self.removed_edges {
-            if !since
-                .removed_edges
+            if !self
+                .previous_removed_edges
                 .contains_key(&(from.clone(), to.clone()))
-                || since
-                    .removed_edges
+                || self
+                    .previous_removed_edges
                     .get(&(from.clone(), to.clone()))
                     .unwrap()
                     < &remove_ts
@@ -296,7 +319,7 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: Self::De) {
+    fn merge_delta(&mut self, delta: &Self::De) {
         for (k, ts) in &delta.vertices {
             match self.vertices.get(k) {
                 Some(current_ts) if current_ts >= ts => continue,
@@ -322,8 +345,12 @@ where
                 };
             }
         }
-        self.removed_vertices.extend(delta.removed_vertices);
-        self.removed_edges.extend(delta.removed_edges);
+        self.removed_vertices.extend(delta.removed_vertices.clone());
+        self.removed_edges.extend(delta.removed_edges.clone());
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 
@@ -423,16 +450,20 @@ where
         de3: <AWGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
-        a1.merge_delta(de3.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
+        a1.merge_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = AWGraph {
             vertices: de2.vertices.clone(),
             edges: de2.edges.clone(),
+            previous_vertices: de2.previous_vertices.clone(),
+            previsou_edges: de2.previsou_edges.clone(),
             removed_vertices: de2.removed_vertices.clone(),
             removed_edges: de2.removed_edges.clone(),
+            previous_removed_vertices: de2.previous_removed_vertices.clone(),
+            previous_removed_edges: de2.previous_removed_edges.clone(),
         };
 
         // Merge de3 into combined_delta following AWGraph merge rules
@@ -457,8 +488,8 @@ where
         combined_delta.removed_vertices.extend(de3.removed_vertices);
         combined_delta.removed_edges.extend(de3.removed_edges);
 
-        a2.merge_delta(de1);
-        a2.merge_delta(combined_delta);
+        a2.merge_delta(&de1);
+        a2.merge_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -470,21 +501,21 @@ where
         de2: <AWGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de2);
-        a2.merge_delta(de1);
+        a2.merge_delta(&de2);
+        a2.merge_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: AWGraph<K>, de1: <AWGraph<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de1.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de1.clone());
+        a2.merge_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
@@ -597,11 +628,11 @@ mod tests {
         let mut delta_graph = g1.clone();
         delta_graph.add_vertex("x".to_string(), timpstamp + 6);
         delta_graph.add_edge("x".to_string(), "b".to_string(), timpstamp + 7);
-        let delta1 = delta_graph.generate_delta(&g1);
+        let delta1 = delta_graph.generate_delta();
         delta_graph.add_vertex("y".to_string(), timpstamp + 8);
-        let delta2 = delta_graph.generate_delta(&g1);
+        let delta2 = delta_graph.generate_delta();
         delta_graph.add_edge("y".to_string(), "x".to_string(), timpstamp + 9);
-        let delta3 = delta_graph.generate_delta(&g1);
+        let delta3 = delta_graph.generate_delta();
 
         assert!(AWGraph::<String>::delta_associativity(
             g1.clone(),

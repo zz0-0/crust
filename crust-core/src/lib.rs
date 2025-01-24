@@ -5,6 +5,7 @@ pub mod crdt_type;
 pub mod crdt_validation;
 pub mod graph;
 // pub mod map;
+pub mod crdt_benchmark;
 pub mod register;
 pub mod sequence;
 pub mod set;

@@ -17,6 +17,8 @@ where
 {
     values: HashMap<Uuid, (K, u128)>,
     tombstones: HashSet<(Uuid, u128)>,
+    previous_values: HashMap<Uuid, (K, u128)>,
+    previous_tombstones: HashSet<(Uuid, u128)>,
 }
 
 #[derive(Clone)]
@@ -32,6 +34,8 @@ where
         Self {
             values: HashMap::new(),
             tombstones: HashSet::new(),
+            previous_values: HashMap::new(),
+            previous_tombstones: HashSet::new(),
         }
     }
 
@@ -90,6 +94,10 @@ where
             } => todo!(),
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for MVRegister<K>
@@ -116,6 +124,10 @@ where
             !self.tombstones.contains(&(*replica_id, *timestamp))
         });
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for MVRegister<K>
@@ -124,10 +136,10 @@ where
 {
     type De = MVRegister<K>;
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         let mut delta = MVRegister::new();
         for (replica_id, (value, timestamp)) in &self.values {
-            match since.values.get(replica_id) {
+            match self.previous_values.get(replica_id) {
                 Some((_, since_timestamp)) if timestamp > since_timestamp => {
                     delta
                         .values
@@ -142,15 +154,19 @@ where
             }
         }
         for tombstone in &self.tombstones {
-            if !since.tombstones.contains(tombstone) {
+            if !self.previous_tombstones.contains(tombstone) {
                 delta.tombstones.insert(*tombstone);
             }
         }
         delta
     }
 
-    fn merge_delta(&mut self, delta: Self::De) {
+    fn merge_delta(&mut self, delta: &Self::De) {
         self.merge(&delta);
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 
@@ -254,9 +270,9 @@ where
         de3: <MVRegister<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
-        a1.merge_delta(de3.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
+        a1.merge_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = MVRegister::new();
@@ -291,8 +307,8 @@ where
             .tombstones
             .extend(de3.tombstones.iter().cloned());
 
-        a2.merge_delta(de1);
-        a2.merge_delta(combined_delta);
+        a2.merge_delta(&de1);
+        a2.merge_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -304,21 +320,21 @@ where
         de2: <MVRegister<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de2);
-        a2.merge_delta(de1);
+        a2.merge_delta(&de2);
+        a2.merge_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: MVRegister<K>, de1: <MVRegister<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de1.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de1.clone());
+        a2.merge_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }

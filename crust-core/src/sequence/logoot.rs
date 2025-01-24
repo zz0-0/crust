@@ -109,7 +109,7 @@
 // {
 //     type Value = K;
 
-//     fn generate_delta(&self, since: &Self) -> Self::Delta {
+//     fn generate_delta(&self) -> Self::Delta {
 //         let delta_elements: Vec<(K, usize)> = self
 //             .elements
 //             .iter()
@@ -121,7 +121,7 @@
 //         }
 //     }
 
-//     fn merge_delta(&mut self, delta: Self::Delta) {
+//     fn merge_delta(&mut self, delta: &Self::Delta) {
 //         self.merge(&delta);
 //     }
 

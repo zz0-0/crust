@@ -14,6 +14,7 @@ where
     K: Eq + Ord + Clone,
 {
     elements: BTreeMap<K, (u128, bool)>,
+    previous_elements: BTreeMap<K, (u128, bool)>,
 }
 
 #[derive(Clone)]
@@ -29,6 +30,7 @@ where
     pub fn new() -> Self {
         Self {
             elements: BTreeMap::new(),
+            previous_elements: BTreeMap::new(),
         }
     }
 
@@ -95,6 +97,10 @@ where
             } => vec![],
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for RWSet<K>
@@ -118,6 +124,10 @@ where
             }
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for RWSet<K>
@@ -126,11 +136,15 @@ where
 {
     type De = RWSet<K>;
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         todo!()
     }
-    fn merge_delta(&mut self, delta: Self::De) {
+    fn merge_delta(&mut self, delta: &Self::De) {
         todo!()
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 

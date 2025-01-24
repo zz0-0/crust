@@ -128,7 +128,7 @@ pub async fn send_delta(Path((crdt_type, delta)): Path<(String, String)>) -> imp
     let mut data_type: DataType<String> = DataType::get_or_create(crdt_type.clone());
     let mut data_type2 = DataType::new(crdt_type.clone());
     let delta = data_type2.to_delta(delta);
-    data_type.merge_delta(delta);
+    data_type.merge_delta(&delta);
     (StatusCode::OK, Json(json!(data_type.to_string())))
 }
 
@@ -139,7 +139,7 @@ pub async fn send_delta_with_timestamp(
     let mut data_type2 = DataType::new(crdt_type.clone());
     let delta = data_type2.to_delta(delta);
     let timestamp1 = get_current_timestamp();
-    data_type.merge_delta(delta);
+    data_type.merge_delta(&delta);
     let timestamp2 = get_current_timestamp();
     (
         StatusCode::OK,

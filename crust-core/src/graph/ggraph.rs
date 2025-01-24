@@ -15,6 +15,8 @@ where
 {
     vertices: HashMap<K, u128>,
     edges: HashMap<(K, K), u128>,
+    previous_vertices: HashMap<K, u128>,
+    previsou_edges: HashMap<(K, K), u128>,
 }
 
 #[derive(Clone)]
@@ -31,6 +33,8 @@ where
         Self {
             vertices: HashMap::new(),
             edges: HashMap::new(),
+            previous_vertices: HashMap::new(),
+            previsou_edges: HashMap::new(),
         }
     }
 
@@ -104,6 +108,10 @@ where
             } => vec![],
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for GGraph<K>
@@ -130,6 +138,10 @@ where
             }
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for GGraph<K>
@@ -138,10 +150,10 @@ where
 {
     type De = GGraph<K>;
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         let mut delta = GGraph::new();
         for (k, ts) in &self.vertices {
-            match since.vertices.get(k) {
+            match self.previous_vertices.get(k) {
                 Some(&since_ts) if since_ts >= *ts => continue,
                 _ => {
                     delta.vertices.insert(k.clone(), *ts);
@@ -149,7 +161,7 @@ where
             };
         }
         for ((from, to), ts) in &self.edges {
-            match since.edges.get(&(from.clone(), to.clone())) {
+            match self.previsou_edges.get(&(from.clone(), to.clone())) {
                 Some(&since_ts) if since_ts >= *ts => continue,
                 _ => {
                     delta.edges.insert((from.clone(), to.clone()), *ts);
@@ -159,7 +171,7 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: Self::De) {
+    fn merge_delta(&mut self, delta: &Self::De) {
         for (k, ts) in &delta.vertices {
             match self.vertices.get(k) {
                 Some(current_ts) if current_ts >= ts => continue,
@@ -178,6 +190,10 @@ where
                 };
             }
         }
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 
@@ -276,14 +292,16 @@ where
         de3: <GGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
-        a1.merge_delta(de3.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
+        a1.merge_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = GGraph {
             vertices: de2.vertices.clone(),
             edges: de2.edges.clone(),
+            previous_vertices: de2.previous_vertices.clone(),
+            previsou_edges: de2.previsou_edges.clone(),
         };
 
         // Merge de3 into combined_delta following AWGraph merge rules
@@ -305,8 +323,8 @@ where
             }
         }
 
-        a2.merge_delta(de1);
-        a2.merge_delta(combined_delta);
+        a2.merge_delta(&de1);
+        a2.merge_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -318,21 +336,21 @@ where
         de2: <GGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de2);
-        a2.merge_delta(de1);
+        a2.merge_delta(&de2);
+        a2.merge_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: GGraph<K>, de1: <GGraph<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de1.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de1.clone());
+        a2.merge_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
@@ -438,11 +456,11 @@ mod tests {
         let mut delta_graph = g1.clone();
         delta_graph.add_vertex("x".to_string(), timpstamp + 6);
         delta_graph.add_edge("x".to_string(), "b".to_string(), timpstamp + 7);
-        let delta1 = delta_graph.generate_delta(&g1);
+        let delta1 = delta_graph.generate_delta();
         delta_graph.add_vertex("y".to_string(), timpstamp + 8);
-        let delta2 = delta_graph.generate_delta(&g1);
+        let delta2 = delta_graph.generate_delta();
         delta_graph.add_edge("y".to_string(), "x".to_string(), timpstamp + 9);
-        let delta3 = delta_graph.generate_delta(&g1);
+        let delta3 = delta_graph.generate_delta();
 
         assert!(GGraph::<String>::delta_associativity(
             g1.clone(),

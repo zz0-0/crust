@@ -18,6 +18,9 @@ where
     elements: BTreeMap<K, (u128, ElementState)>,
     tombstones: BTreeMap<K, HashSet<u128>>,
     removal_candidates: BTreeMap<K, (u128, HashSet<Uuid>)>,
+    previous_elements: BTreeMap<K, (u128, ElementState)>,
+    previous_tombstones: BTreeMap<K, HashSet<u128>>,
+    previous_removal_candidates: BTreeMap<K, (u128, HashSet<Uuid>)>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
@@ -43,6 +46,9 @@ where
             elements: BTreeMap::new(),
             tombstones: BTreeMap::new(),
             removal_candidates: BTreeMap::new(),
+            previous_elements: BTreeMap::new(),
+            previous_tombstones: BTreeMap::new(),
+            previous_removal_candidates: BTreeMap::new(),
         }
     }
 
@@ -145,6 +151,10 @@ where
             } => vec![],
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for TPSet<K>
@@ -195,6 +205,10 @@ where
             }
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for TPSet<K>
@@ -203,14 +217,14 @@ where
 {
     type De = TPSet<K>;
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         TPSet {
             node_id: self.node_id,
             elements: self
                 .elements
                 .iter()
                 .filter(|(element, (ts, _))| {
-                    if let Some((since_ts, _)) = since.elements.get(element) {
+                    if let Some((since_ts, _)) = self.previous_elements.get(element) {
                         ts > since_ts
                     } else {
                         true
@@ -222,7 +236,7 @@ where
                 .tombstones
                 .iter()
                 .filter(|(element, tombstone)| {
-                    if let Some(since_tombstone) = since.tombstones.get(element) {
+                    if let Some(since_tombstone) = self.previous_tombstones.get(element) {
                         tombstone.len() > since_tombstone.len()
                     } else {
                         true
@@ -234,7 +248,7 @@ where
                 .removal_candidates
                 .iter()
                 .filter(|(element, (ts, _))| {
-                    if let Some((since_ts, _)) = since.removal_candidates.get(element) {
+                    if let Some((since_ts, _)) = self.previous_removal_candidates.get(element) {
                         ts > since_ts
                     } else {
                         true
@@ -242,10 +256,17 @@ where
                 })
                 .map(|(element, (ts, acks))| (element.clone(), (ts.clone(), acks.clone())))
                 .collect(),
+            previous_elements: self.elements.clone(),
+            previous_tombstones: self.tombstones.clone(),
+            previous_removal_candidates: self.removal_candidates.clone(),
         }
     }
-    fn merge_delta(&mut self, delta: Self::De) {
+    fn merge_delta(&mut self, delta: &Self::De) {
         self.merge(&delta);
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 
@@ -344,9 +365,9 @@ where
         de3: <TPSet<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
-        a1.merge_delta(de3.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
+        a1.merge_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = TPSet {
@@ -354,12 +375,15 @@ where
             elements: de2.elements.clone(),
             tombstones: de2.tombstones.clone(),
             removal_candidates: de2.removal_candidates.clone(),
+            previous_elements: de2.previous_elements.clone(),
+            previous_tombstones: de2.previous_tombstones.clone(),
+            previous_removal_candidates: de2.previous_removal_candidates.clone(),
         };
 
         todo!();
 
-        a2.merge_delta(de1);
-        a2.merge_delta(combined_delta);
+        a2.merge_delta(&de1);
+        a2.merge_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -371,21 +395,21 @@ where
         de2: <TPSet<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de2);
-        a2.merge_delta(de1);
+        a2.merge_delta(&de2);
+        a2.merge_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: TPSet<K>, de1: <TPSet<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de1.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de1.clone());
+        a2.merge_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }

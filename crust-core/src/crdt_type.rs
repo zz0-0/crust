@@ -20,15 +20,18 @@ pub trait CmRDT {
 
     fn apply(&mut self, op: &Self::Op);
     fn convert_operation(&self, op: TextOperation<Self::Value>) -> Vec<Self::Op>;
+    fn name(&self) -> String;
 }
 pub trait CvRDT {
     fn merge(&mut self, other: &Self);
+    fn name(&self) -> String;
 }
 pub trait Delta {
     type De: Clone;
 
-    fn generate_delta(&self, since: &Self) -> Self::De;
-    fn merge_delta(&mut self, delta: Self::De);
+    fn generate_delta(&self) -> Self::De;
+    fn merge_delta(&mut self, delta: &Self::De);
+    fn name(&self) -> String;
 }
 
 #[derive(Clone)]
@@ -87,6 +90,7 @@ where
     None,
 }
 
+#[derive(Clone)]
 pub enum Operation<K> {
     GCounter(counter::gcounter::Operation<K>),
     PNCounter(counter::pncounter::Operation<K>),
@@ -379,7 +383,33 @@ where
         }
     }
 
-    pub fn merge_delta(&mut self, delta: DataTypeDelta<K>) {
+    pub fn generate_delta(&mut self) -> DataTypeDelta<K> {
+        match self {
+            DataType::GCounter(crdt) => DataTypeDelta::GCounter(crdt.generate_delta()),
+            DataType::PNCounter(crdt) => DataTypeDelta::PNCounter(crdt.generate_delta()),
+            DataType::AWGraph(crdt) => DataTypeDelta::AWGraph(crdt.generate_delta()),
+            DataType::GGraph(crdt) => DataTypeDelta::GGraph(crdt.generate_delta()),
+            DataType::ORGraph(crdt) => DataTypeDelta::ORGraph(crdt.generate_delta()),
+            DataType::TPGraph(crdt) => DataTypeDelta::TPGraph(crdt.generate_delta()),
+            // DataType::CMMap(crdt) => DataTypeDelta::CMMap(crdt.generate_delta()),
+            // DataType::LWWMap(crdt) => DataTypeDelta::LWWMap(crdt.generate_delta()),
+            // DataType::ORMap(crdt) => DataTypeDelta::ORMap(crdt.generate_delta()),
+            // DataType::RMap(crdt) => DataTypeDelta::RMap(crdt.generate_delta()),
+            DataType::LWWRegister(_) => DataTypeDelta::None,
+            DataType::MVRegister(crdt) => DataTypeDelta::MVRegister(crdt.generate_delta()),
+            // DataType::Logoot(crdt) => DataTypeDelta::Logoot(crdt.generate_delta()),
+            // DataType::LSeq(crdt) => DataTypeDelta::LSeq(crdt.generate_delta()),
+            // DataType::RGA(crdt) => DataTypeDelta::RGA(crdt.generate_delta()),
+            DataType::AWSet(crdt) => DataTypeDelta::AWSet(crdt.generate_delta()),
+            DataType::GSet(crdt) => DataTypeDelta::GSet(crdt.generate_delta()),
+            DataType::ORSet(crdt) => DataTypeDelta::ORSet(crdt.generate_delta()),
+            DataType::RWSet(crdt) => DataTypeDelta::RWSet(crdt.generate_delta()),
+            DataType::TPSet(crdt) => DataTypeDelta::TPSet(crdt.generate_delta()),
+            // DataType::MerkleDAGTree(crdt) => DataTypeDelta::MerkleDAGTree(crdt.generate_delta()),
+        }
+    }
+
+    pub fn merge_delta(&mut self, delta: &DataTypeDelta<K>) {
         match (self, delta) {
             (DataType::GCounter(crdt), DataTypeDelta::GCounter(delta)) => crdt.merge_delta(delta),
             (DataType::PNCounter(crdt), DataTypeDelta::PNCounter(delta)) => crdt.merge_delta(delta),

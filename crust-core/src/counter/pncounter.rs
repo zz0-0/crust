@@ -19,6 +19,8 @@ where
 {
     p: HashMap<K, u64>,
     n: HashMap<K, u64>,
+    previous_p: HashMap<K, u64>,
+    previous_n: HashMap<K, u64>,
     applied_ops: HashSet<u128>,
 }
 
@@ -36,6 +38,8 @@ where
         Self {
             p: HashMap::new(),
             n: HashMap::new(),
+            previous_p: HashMap::new(),
+            previous_n: HashMap::new(),
             applied_ops: HashSet::new(),
         }
     }
@@ -107,6 +111,10 @@ where
             }
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for PNCounter<K>
@@ -124,6 +132,10 @@ where
         }
         self.applied_ops.extend(other.applied_ops.iter().copied());
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for PNCounter<K>
@@ -132,19 +144,19 @@ where
 {
     type De = (HashMap<K, u64>, HashMap<K, u64>);
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         let mut p_delta = HashMap::new();
         let mut n_delta = HashMap::new();
 
         for (k, v) in &self.p {
-            let since_v = since.p.get(k).unwrap_or(&0);
+            let since_v = self.previous_p.get(k).unwrap_or(&0);
             if v > since_v {
                 p_delta.insert(k.clone(), *v);
             }
         }
 
         for (k, v) in &self.n {
-            let since_v = since.n.get(k).unwrap_or(&0);
+            let since_v = self.previous_n.get(k).unwrap_or(&0);
             if v > since_v {
                 n_delta.insert(k.clone(), *v);
             }
@@ -153,15 +165,19 @@ where
         (p_delta, n_delta)
     }
 
-    fn merge_delta(&mut self, delta: Self::De) {
-        for (k, v) in delta.0 {
+    fn merge_delta(&mut self, delta: &Self::De) {
+        for (k, v) in delta.clone().0 {
             let current_p = self.p.entry(k).or_insert(0);
             *current_p = (*current_p).max(v);
         }
-        for (k, v) in delta.1 {
+        for (k, v) in delta.clone().1 {
             let current_n = self.n.entry(k).or_insert(0);
             *current_n = (*current_n).max(v);
         }
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 
@@ -265,9 +281,9 @@ where
         de3: <PNCounter<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
-        a1.merge_delta(de3.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
+        a1.merge_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = (HashMap::new(), HashMap::new());
@@ -283,8 +299,8 @@ where
         for (k, v) in de3.1.into_iter() {
             *combined_delta.1.entry(k).or_insert(0) += v;
         }
-        a2.merge_delta(de1);
-        a2.merge_delta(combined_delta);
+        a2.merge_delta(&de1);
+        a2.merge_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -296,21 +312,21 @@ where
         de2: <PNCounter<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de2);
-        a2.merge_delta(de1);
+        a2.merge_delta(&de2);
+        a2.merge_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: PNCounter<K>, de1: <PNCounter<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de1.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de1.clone());
+        a2.merge_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
@@ -380,9 +396,9 @@ mod tests {
         b.increment("y".to_string());
         c.increment("z".to_string());
 
-        let d1 = a.generate_delta(&b);
-        let d2 = b.generate_delta(&c);
-        let d3 = c.generate_delta(&a);
+        let d1 = a.generate_delta();
+        let d2 = b.generate_delta();
+        let d3 = c.generate_delta();
 
         assert!(PNCounter::<String>::delta_associativity(
             a.clone(),

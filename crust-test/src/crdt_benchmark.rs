@@ -139,3 +139,19 @@
 //         pods
 //     }
 // }
+
+use k8s_openapi::api::core::v1::Pod;
+
+pub struct CRDTBenchmark {
+    replicas: Vec<Pod>,
+    metrics: BenchmarkMetrics,
+    crdt_type: String,
+}
+
+pub struct BenchmarkMetrics {
+    latencies: Vec<f64>,
+    throughput: f64,
+    memory_usage: f64,
+    cpu_usage: f64,
+    network_usage: f64,
+}

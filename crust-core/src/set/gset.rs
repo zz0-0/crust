@@ -14,6 +14,7 @@ where
     K: Eq + Ord + Clone,
 {
     elements: BTreeMap<K, u128>,
+    previous_elements: BTreeMap<K, u128>,
 }
 
 #[derive(Clone)]
@@ -28,6 +29,7 @@ where
     pub fn new() -> Self {
         Self {
             elements: BTreeMap::new(),
+            previous_elements: BTreeMap::new(),
         }
     }
 
@@ -80,6 +82,10 @@ where
             } => vec![],
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for GSet<K>
@@ -96,6 +102,10 @@ where
             }
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for GSet<K>
@@ -104,10 +114,10 @@ where
 {
     type De = GSet<K>;
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         let mut delta = GSet::new();
         for (key, timestamp) in self.elements.iter() {
-            match since.elements.get(key) {
+            match self.previous_elements.get(key) {
                 Some(&ts) if ts >= *timestamp => continue,
                 _ => {
                     delta.elements.insert(key.clone(), *timestamp);
@@ -117,7 +127,7 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: Self::De) {
+    fn merge_delta(&mut self, delta: &Self::De) {
         for (key, timestamp) in delta.elements.iter() {
             match self.elements.get(key) {
                 Some(&ts) if ts >= *timestamp => continue,
@@ -126,6 +136,10 @@ where
                 }
             }
         }
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 
@@ -224,13 +238,14 @@ where
         de3: <GSet<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
-        a1.merge_delta(de3.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
+        a1.merge_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = GSet {
             elements: de2.elements.clone(),
+            previous_elements: de2.previous_elements.clone(),
         };
 
         for (k, v) in de3.elements {
@@ -242,8 +257,8 @@ where
             }
         }
 
-        a2.merge_delta(de1);
-        a2.merge_delta(combined_delta);
+        a2.merge_delta(&de1);
+        a2.merge_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -255,21 +270,21 @@ where
         de2: <GSet<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de2);
-        a2.merge_delta(de1);
+        a2.merge_delta(&de2);
+        a2.merge_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: GSet<K>, de1: <GSet<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de1.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de1.clone());
+        a2.merge_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
@@ -367,11 +382,11 @@ mod tests {
         let mut delta_graph = g1.clone();
         delta_graph.insert("x".to_string(), timpstamp + 6);
 
-        let delta1 = delta_graph.generate_delta(&g1);
+        let delta1 = delta_graph.generate_delta();
         delta_graph.insert("y".to_string(), timpstamp + 8);
-        let delta2 = delta_graph.generate_delta(&g1);
+        let delta2 = delta_graph.generate_delta();
 
-        let delta3 = delta_graph.generate_delta(&g1);
+        let delta3 = delta_graph.generate_delta();
 
         assert!(GSet::<String>::delta_associativity(
             g1.clone(),

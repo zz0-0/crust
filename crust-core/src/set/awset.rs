@@ -14,6 +14,8 @@ where
 {
     elements: BTreeMap<K, u128>,
     removed_elements: BTreeMap<K, u128>,
+    previous_elements: BTreeMap<K, u128>,
+    previous_removed_elements: BTreeMap<K, u128>,
 }
 
 #[derive(Clone)]
@@ -30,6 +32,8 @@ where
         Self {
             elements: BTreeMap::new(),
             removed_elements: BTreeMap::new(),
+            previous_elements: BTreeMap::new(),
+            previous_removed_elements: BTreeMap::new(),
         }
     }
 
@@ -96,6 +100,10 @@ where
             } => vec![],
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for AWSet<K>
@@ -129,6 +137,10 @@ where
             }
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for AWSet<K>
@@ -137,10 +149,10 @@ where
 {
     type De = AWSet<K>;
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         let mut delta = AWSet::new();
         for (key, timestamp) in &self.elements {
-            match since.elements.get(key) {
+            match self.previous_elements.get(key) {
                 Some(since_timestamp) if timestamp > since_timestamp => {
                     delta.elements.insert(key.clone(), *timestamp);
                 }
@@ -151,7 +163,7 @@ where
             }
         }
         for (key, timestamp) in &self.removed_elements {
-            match since.removed_elements.get(key) {
+            match self.previous_removed_elements.get(key) {
                 Some(since_timestamp) if timestamp > since_timestamp => {
                     delta.removed_elements.insert(key.clone(), *timestamp);
                 }
@@ -164,7 +176,7 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: Self::De) {
+    fn merge_delta(&mut self, delta: &Self::De) {
         for (key, timpstamp) in &delta.elements {
             if let Some(ref remove_ts) = self.removed_elements.get(key) {
                 if timpstamp > remove_ts {
@@ -182,7 +194,11 @@ where
             }
         }
 
-        self.removed_elements.extend(delta.removed_elements);
+        self.removed_elements.extend(delta.removed_elements.clone());
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 

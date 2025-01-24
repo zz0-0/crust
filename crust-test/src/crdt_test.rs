@@ -93,7 +93,7 @@
 //             })
 //             .and_then(|pod| pod.status.as_ref())
 //             .and_then(|status| status.pod_ip.as_ref())
-//             
+//
 //         let url = format!(
 //             "http://{}:3000/crust/{}/operation/{}",
 //             pod_ip, crdt_type, operation
@@ -114,7 +114,7 @@
 //             })
 //             .and_then(|pod| pod.status.as_ref())
 //             .and_then(|status| status.pod_ip.as_ref())
-//             
+//
 //         let url = format!("http://{}:3000/crust/state", pod_ip);
 //         self.client.get(&url).json(state).send().await.unwrap()
 //     }
@@ -152,7 +152,7 @@
 //             })
 //             .and_then(|pod| pod.status.as_ref())
 //             .and_then(|status| status.pod_ip.as_ref())
-//             
+//
 //         let url = format!("http://{}:3000/crust/info", pod_ip);
 //         self.client
 //             .get(&url)
@@ -423,3 +423,18 @@
 //         result1 == result2
 //     }
 // }
+
+use k8s_openapi::api::core::v1::Pod;
+
+pub struct CRDTTest {
+    replicas: Vec<Pod>,
+    crdt_type: String,
+}
+
+impl CRDTTest {
+    async fn test_CvRDT(&self) {}
+
+    async fn test_CmRDT(&self) {}
+
+    async fn test_Delta(&self) {}
+}

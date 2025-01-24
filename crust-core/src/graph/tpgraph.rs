@@ -19,6 +19,10 @@ where
     edges: HashMap<(K, K), (u128, EdgeState)>,
     tombstones: HashMap<K, HashSet<u128>>,
     removal_candidates: HashMap<K, (u128, HashSet<Uuid>)>,
+    previous_vertices: HashMap<K, (u128, VertexState)>,
+    previous_edges: HashMap<(K, K), (u128, EdgeState)>,
+    previous_tombstones: HashMap<K, HashSet<u128>>,
+    previous_removal_candidates: HashMap<K, (u128, HashSet<Uuid>)>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
@@ -53,6 +57,10 @@ where
             edges: HashMap::new(),
             tombstones: HashMap::new(),
             removal_candidates: HashMap::new(),
+            previous_vertices: HashMap::new(),
+            previous_edges: HashMap::new(),
+            previous_tombstones: HashMap::new(),
+            previous_removal_candidates: HashMap::new(),
         }
     }
 
@@ -216,6 +224,10 @@ where
             }
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CvRDT for TPGraph<K>
@@ -279,6 +291,10 @@ where
             }
         }
     }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> Delta for TPGraph<K>
@@ -287,27 +303,30 @@ where
 {
     type De = TPGraph<K>;
 
-    fn generate_delta(&self, since: &Self) -> Self::De {
+    fn generate_delta(&self) -> Self::De {
         TPGraph {
             node_id: self.node_id,
             vertices: self
                 .vertices
                 .iter()
-                .filter(|(k, (ts, _))| since.vertices.get(k).map_or(true, |(ts2, _)| ts > ts2))
+                .filter(|(k, (ts, _))| {
+                    self.previous_vertices
+                        .get(k)
+                        .map_or(true, |(ts2, _)| ts > ts2)
+                })
                 .map(|(k, v)| (k.clone(), v.clone()))
                 .collect(),
             edges: self
                 .edges
                 .iter()
-                .filter(|(k, (ts, _))| since.edges.get(k).map_or(true, |(ts2, _)| ts > ts2))
+                .filter(|(k, (ts, _))| self.previous_edges.get(k).map_or(true, |(ts2, _)| ts > ts2))
                 .map(|(k, v)| (k.clone(), v.clone()))
                 .collect(),
             tombstones: self
                 .tombstones
                 .iter()
                 .filter(|(k, v)| {
-                    since
-                        .tombstones
+                    self.previous_tombstones
                         .get(k)
                         .map_or(true, |v2| v.len() > v2.len())
                 })
@@ -317,18 +336,25 @@ where
                 .removal_candidates
                 .iter()
                 .filter(|(k, (ts, _))| {
-                    since
-                        .removal_candidates
+                    self.previous_removal_candidates
                         .get(k)
                         .map_or(true, |(ts2, _)| ts > ts2)
                 })
                 .map(|(k, v)| (k.clone(), v.clone()))
                 .collect(),
+            previous_edges: self.edges.clone(),
+            previous_vertices: self.vertices.clone(),
+            previous_tombstones: self.tombstones.clone(),
+            previous_removal_candidates: self.removal_candidates.clone(),
         }
     }
 
-    fn merge_delta(&mut self, delta: Self::De) {
+    fn merge_delta(&mut self, delta: &Self::De) {
         self.merge(&delta);
+    }
+
+    fn name(&self) -> String {
+        "PNCounter".to_string()
     }
 }
 
@@ -427,9 +453,9 @@ where
         de3: <TPGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
-        a1.merge_delta(de3.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
+        a1.merge_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = TPGraph {
@@ -438,12 +464,16 @@ where
             edges: de2.edges.clone(),
             tombstones: de2.tombstones.clone(),
             removal_candidates: de2.removal_candidates.clone(),
+            previous_vertices: de2.previous_vertices.clone(),
+            previous_edges: de2.previous_edges.clone(),
+            previous_tombstones: de2.previous_tombstones.clone(),
+            previous_removal_candidates: de2.previous_removal_candidates.clone(),
         };
 
         todo!();
 
-        a2.merge_delta(de1);
-        a2.merge_delta(combined_delta);
+        a2.merge_delta(&de1);
+        a2.merge_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -455,21 +485,21 @@ where
         de2: <TPGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de2.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de2);
-        a2.merge_delta(de1);
+        a2.merge_delta(&de2);
+        a2.merge_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: TPGraph<K>, de1: <TPGraph<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(de1.clone());
-        a1.merge_delta(de1.clone());
+        a1.merge_delta(&de1.clone());
+        a1.merge_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(de1.clone());
+        a2.merge_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }

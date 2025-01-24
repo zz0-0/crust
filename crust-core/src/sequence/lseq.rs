@@ -110,7 +110,7 @@
 // {
 //     type Value = K;
 
-//     fn generate_delta(&self, since: &Self) -> Self::Delta {
+//     fn generate_delta(&self) -> Self::Delta {
 //         let mut delta = LSeq::new();
 //         let mut since_iter = since.elements.iter();
 //         let mut since_ptr = since_iter.next();
@@ -139,7 +139,7 @@
 //         delta
 //     }
 
-//     fn merge_delta(&mut self, delta: Self::Delta) {
+//     fn merge_delta(&mut self, delta: &Self::Delta) {
 //         self.merge(&delta);
 //     }
 
