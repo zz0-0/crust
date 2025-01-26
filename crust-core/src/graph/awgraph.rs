@@ -116,6 +116,10 @@ where
             }
         }
     }
+
+    pub fn name(&self) -> String {
+        "AWGraph".to_string()
+    }
 }
 
 impl<K> CmRDT for AWGraph<K>
@@ -171,10 +175,6 @@ where
                 vec![]
             }
         }
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -254,10 +254,6 @@ where
             }
         }
     }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
-    }
 }
 
 impl<K> Delta for AWGraph<K>
@@ -319,7 +315,7 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: &Self::De) {
+    fn apply_delta(&mut self, delta: &Self::De) {
         for (k, ts) in &delta.vertices {
             match self.vertices.get(k) {
                 Some(current_ts) if current_ts >= ts => continue,
@@ -347,10 +343,6 @@ where
         }
         self.removed_vertices.extend(delta.removed_vertices.clone());
         self.removed_edges.extend(delta.removed_edges.clone());
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -450,9 +442,9 @@ where
         de3: <AWGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de2.clone());
-        a1.merge_delta(&de3.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de2.clone());
+        a1.apply_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = AWGraph {
@@ -488,8 +480,8 @@ where
         combined_delta.removed_vertices.extend(de3.removed_vertices);
         combined_delta.removed_edges.extend(de3.removed_edges);
 
-        a2.merge_delta(&de1);
-        a2.merge_delta(&combined_delta);
+        a2.apply_delta(&de1);
+        a2.apply_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -501,21 +493,21 @@ where
         de2: <AWGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de2.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(&de2);
-        a2.merge_delta(&de1);
+        a2.apply_delta(&de2);
+        a2.apply_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: AWGraph<K>, de1: <AWGraph<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de1.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(&de1.clone());
+        a2.apply_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }

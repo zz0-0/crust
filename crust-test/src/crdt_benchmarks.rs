@@ -24,7 +24,7 @@ where
         let mut a1 = DataType::<K>::new(crdt_type.clone());
         let a2 = DataType::<K>::new(crdt_type.clone());
         for _ in 0..iterations {
-            a1.merge(a2.clone());
+            a1.merge(&a2.clone());
         }
     }
     pub fn benchmark_remote_single_apply(
@@ -40,12 +40,12 @@ where
             }
         }
     }
-    pub fn benchmark_remote_single_merge_delta(crdt_type: String, iterations: u128) {
+    pub fn benchmark_remote_single_apply_delta(crdt_type: String, iterations: u128) {
         let mut a1 = DataType::<K>::new(crdt_type.clone());
         let mut a2 = DataType::<K>::new(crdt_type.clone());
         let delta = a2.generate_delta();
         for _ in 0..iterations {
-            a1.merge_delta(&delta);
+            a1.apply_delta(&delta);
         }
     }
 
@@ -53,7 +53,7 @@ where
         let mut a1 = DataType::<K>::new(crdt_type.clone());
         let a2 = DataType::<K>::new(crdt_type.clone());
         for _ in 0..iterations {
-            a1.merge(a2.clone());
+            a1.merge(&a2.clone());
         }
     }
     pub fn benchmark_remote_multiple_with_conflict_apply(
@@ -69,7 +69,7 @@ where
             }
         }
     }
-    pub fn benchmark_remote_multiple_with_conflict_merge_delta(
+    pub fn benchmark_remote_multiple_with_conflict_apply_delta(
         crdt_type: String,
         iterations: u128,
     ) {
@@ -77,7 +77,7 @@ where
         let mut a2 = DataType::<K>::new(crdt_type.clone());
         let delta = a2.generate_delta();
         for _ in 0..iterations {
-            a1.merge_delta(&delta);
+            a1.apply_delta(&delta);
         }
     }
 
@@ -88,7 +88,7 @@ where
         let mut a1 = DataType::<K>::new(crdt_type.clone());
         let a2 = DataType::<K>::new(crdt_type.clone());
         for _ in 0..iterations {
-            a1.merge(a2.clone());
+            a1.merge(&a2.clone());
         }
     }
     pub fn benchmark_remote_concurrent_multiple_with_conflict_apply(
@@ -104,7 +104,7 @@ where
             }
         }
     }
-    pub fn benchmark_remote_concurrent_multiple_with_conflict_merge_delta(
+    pub fn benchmark_remote_concurrent_multiple_with_conflict_apply_delta(
         crdt_type: String,
         iterations: u128,
     ) {
@@ -112,7 +112,7 @@ where
         let mut a2 = DataType::<K>::new(crdt_type.clone());
         let delta = a2.generate_delta();
         for _ in 0..iterations {
-            a1.merge_delta(&delta);
+            a1.apply_delta(&delta);
         }
     }
 }

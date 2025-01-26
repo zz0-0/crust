@@ -68,6 +68,10 @@ where
             }
         }
     }
+
+    pub fn name(&self) -> String {
+        "AWSet".to_string()
+    }
 }
 
 impl<K> CmRDT for AWSet<K>
@@ -99,10 +103,6 @@ where
                 value: _,
             } => vec![],
         }
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -136,10 +136,6 @@ where
                 }
             }
         }
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -176,7 +172,7 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: &Self::De) {
+    fn apply_delta(&mut self, delta: &Self::De) {
         for (key, timpstamp) in &delta.elements {
             if let Some(ref remove_ts) = self.removed_elements.get(key) {
                 if timpstamp > remove_ts {
@@ -195,10 +191,6 @@ where
         }
 
         self.removed_elements.extend(delta.removed_elements.clone());
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 

@@ -70,6 +70,10 @@ where
             }
         }
     }
+
+    pub fn name(&self) -> String {
+        "ORSet".to_string()
+    }
 }
 
 impl<K> CmRDT for ORSet<K>
@@ -102,10 +106,6 @@ where
             } => vec![],
         }
     }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
-    }
 }
 
 impl<K> CvRDT for ORSet<K>
@@ -120,10 +120,6 @@ where
                 .or_insert_with(HashSet::new);
             local_tags.extend(tags.iter().cloned());
         }
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -155,7 +151,7 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: &Self::De) {
+    fn apply_delta(&mut self, delta: &Self::De) {
         for (element, history) in delta.elements.iter() {
             let local_history = self
                 .elements
@@ -163,10 +159,6 @@ where
                 .or_insert_with(HashSet::new);
             local_history.extend(history.iter().cloned());
         }
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 

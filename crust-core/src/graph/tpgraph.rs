@@ -168,6 +168,10 @@ where
             self.edges.insert(edge, (timestamp, EdgeState::Removed));
         }
     }
+
+    pub fn name(&self) -> String {
+        "TPGraph".to_string()
+    }
 }
 
 impl<K> CmRDT for TPGraph<K>
@@ -223,10 +227,6 @@ where
                 vec![]
             }
         }
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -291,10 +291,6 @@ where
             }
         }
     }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
-    }
 }
 
 impl<K> Delta for TPGraph<K>
@@ -349,12 +345,8 @@ where
         }
     }
 
-    fn merge_delta(&mut self, delta: &Self::De) {
+    fn apply_delta(&mut self, delta: &Self::De) {
         self.merge(&delta);
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -453,9 +445,9 @@ where
         de3: <TPGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de2.clone());
-        a1.merge_delta(&de3.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de2.clone());
+        a1.apply_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = TPGraph {
@@ -472,8 +464,8 @@ where
 
         todo!();
 
-        a2.merge_delta(&de1);
-        a2.merge_delta(&combined_delta);
+        a2.apply_delta(&de1);
+        a2.apply_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -485,21 +477,21 @@ where
         de2: <TPGraph<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de2.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(&de2);
-        a2.merge_delta(&de1);
+        a2.apply_delta(&de2);
+        a2.apply_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: TPGraph<K>, de1: <TPGraph<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de1.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(&de1.clone());
+        a2.apply_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }

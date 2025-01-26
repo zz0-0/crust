@@ -69,6 +69,10 @@ where
     pub fn decrement(&mut self, key: K) {
         *self.n.entry(key).or_insert(0) += 1;
     }
+
+    pub fn name(&self) -> String {
+        "PNCounter".to_string()
+    }
 }
 
 impl<K> CmRDT for PNCounter<K>
@@ -111,10 +115,6 @@ where
             }
         }
     }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
-    }
 }
 
 impl<K> CvRDT for PNCounter<K>
@@ -131,10 +131,6 @@ where
             *current_n = (*current_n).max(*v);
         }
         self.applied_ops.extend(other.applied_ops.iter().copied());
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -165,7 +161,7 @@ where
         (p_delta, n_delta)
     }
 
-    fn merge_delta(&mut self, delta: &Self::De) {
+    fn apply_delta(&mut self, delta: &Self::De) {
         for (k, v) in delta.clone().0 {
             let current_p = self.p.entry(k).or_insert(0);
             *current_p = (*current_p).max(v);
@@ -174,10 +170,6 @@ where
             let current_n = self.n.entry(k).or_insert(0);
             *current_n = (*current_n).max(v);
         }
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -281,9 +273,9 @@ where
         de3: <PNCounter<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de2.clone());
-        a1.merge_delta(&de3.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de2.clone());
+        a1.apply_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = (HashMap::new(), HashMap::new());
@@ -299,8 +291,8 @@ where
         for (k, v) in de3.1.into_iter() {
             *combined_delta.1.entry(k).or_insert(0) += v;
         }
-        a2.merge_delta(&de1);
-        a2.merge_delta(&combined_delta);
+        a2.apply_delta(&de1);
+        a2.apply_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -312,21 +304,21 @@ where
         de2: <PNCounter<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de2.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(&de2);
-        a2.merge_delta(&de1);
+        a2.apply_delta(&de2);
+        a2.apply_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: PNCounter<K>, de1: <PNCounter<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de1.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(&de1.clone());
+        a2.apply_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }

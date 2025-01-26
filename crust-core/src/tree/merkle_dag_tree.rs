@@ -87,7 +87,7 @@
 //         todo!()
 //     }
 
-//     fn merge_delta(&mut self, delta: &Self::Delta) {
+//     fn apply_delta(&mut self, delta: &Self::Delta) {
 //         todo!()
 //     }
 

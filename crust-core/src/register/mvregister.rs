@@ -60,6 +60,10 @@ where
         self.values
             .insert(replica_id, (value, get_current_timestamp()));
     }
+
+    pub fn name(&self) -> String {
+        "MVRegister".to_string()
+    }
 }
 
 impl<K> CmRDT for MVRegister<K>
@@ -94,10 +98,6 @@ where
             } => todo!(),
         }
     }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
-    }
 }
 
 impl<K> CvRDT for MVRegister<K>
@@ -123,10 +123,6 @@ where
         self.values.retain(|replica_id, (_, timestamp)| {
             !self.tombstones.contains(&(*replica_id, *timestamp))
         });
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -161,12 +157,8 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: &Self::De) {
+    fn apply_delta(&mut self, delta: &Self::De) {
         self.merge(&delta);
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 
@@ -270,9 +262,9 @@ where
         de3: <MVRegister<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de2.clone());
-        a1.merge_delta(&de3.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de2.clone());
+        a1.apply_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = MVRegister::new();
@@ -307,8 +299,8 @@ where
             .tombstones
             .extend(de3.tombstones.iter().cloned());
 
-        a2.merge_delta(&de1);
-        a2.merge_delta(&combined_delta);
+        a2.apply_delta(&de1);
+        a2.apply_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -320,21 +312,21 @@ where
         de2: <MVRegister<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de2.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(&de2);
-        a2.merge_delta(&de1);
+        a2.apply_delta(&de2);
+        a2.apply_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: MVRegister<K>, de1: <MVRegister<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de1.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(&de1.clone());
+        a2.apply_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }

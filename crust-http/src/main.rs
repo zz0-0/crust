@@ -1,7 +1,7 @@
 use axum::{routing::get, Router};
 use crdt_request::{
-    info, send_delta, send_delta_with_timestamp, send_operation, send_operation_with_timestamp,
-    send_state, send_state_with_timestamp,
+    info, send_benchmark, send_delta, send_delta_with_timestamp, send_operation,
+    send_operation_with_timestamp, send_state, send_state_with_timestamp,
 };
 use tracing::{subscriber, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -30,7 +30,8 @@ async fn main() {
             "/crust/:type/delta/:delta/time",
             get(send_delta_with_timestamp),
         )
-        .route("/crust/info", get(info));
+        .route("/crust/info", get(info))
+        .route("/crust/:type/:iterations", get(send_benchmark));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();

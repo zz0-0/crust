@@ -61,6 +61,10 @@ where
     pub fn increment(&mut self, key: K) {
         *self.counter.entry(key).or_insert(0) += 1;
     }
+
+    pub fn name(&self) -> String {
+        "GCounter".to_string()
+    }
 }
 
 impl<K> CmRDT for GCounter<K>
@@ -92,10 +96,6 @@ where
             TextOperation::Delete { .. } => vec![],
         }
     }
-
-    fn name(&self) -> String {
-        "GCounter".to_string()
-    }
 }
 
 impl<K> CvRDT for GCounter<K>
@@ -107,10 +107,6 @@ where
             let current_count = self.counter.entry(k.clone()).or_insert(0);
             *current_count = (*current_count).max(*v);
         }
-    }
-
-    fn name(&self) -> String {
-        "GCounter".to_string()
     }
 }
 
@@ -134,15 +130,11 @@ where
         delta
     }
 
-    fn merge_delta(&mut self, delta: &Self::De) {
+    fn apply_delta(&mut self, delta: &Self::De) {
         for (k, v) in delta {
             let current = self.counter.entry(k.clone()).or_insert(0);
             *current = (*current).max(v.clone());
         }
-    }
-
-    fn name(&self) -> String {
-        "GCounter".to_string()
     }
 }
 
@@ -244,9 +236,9 @@ where
         de3: <GCounter<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de2.clone());
-        a1.merge_delta(&de3.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de2.clone());
+        a1.apply_delta(&de3.clone());
 
         let mut a2 = a.clone();
         let mut combined_delta = HashMap::new();
@@ -256,8 +248,8 @@ where
         for (k, v) in de3.into_iter() {
             *combined_delta.entry(k).or_insert(0) += v;
         }
-        a2.merge_delta(&de1);
-        a2.merge_delta(&combined_delta);
+        a2.apply_delta(&de1);
+        a2.apply_delta(&combined_delta);
 
         println!("{:?} {:?}", a1, a2);
         a1 == a2
@@ -269,21 +261,21 @@ where
         de2: <GCounter<K> as Delta>::De,
     ) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de2.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de2.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(&de2);
-        a2.merge_delta(&de1);
+        a2.apply_delta(&de2);
+        a2.apply_delta(&de1);
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }
 
     fn delta_idempotence(a: GCounter<K>, de1: <GCounter<K> as Delta>::De) -> bool {
         let mut a1 = a.clone();
-        a1.merge_delta(&de1.clone());
-        a1.merge_delta(&de1.clone());
+        a1.apply_delta(&de1.clone());
+        a1.apply_delta(&de1.clone());
         let mut a2 = a.clone();
-        a2.merge_delta(&de1.clone());
+        a2.apply_delta(&de1.clone());
         println!("{:?} {:?}", a1, a2);
         a1 == a2
     }

@@ -65,6 +65,10 @@ where
             self.elements.insert(value, (timestamp, false));
         }
     }
+
+    pub fn name(&self) -> String {
+        "RWSet".to_string()
+    }
 }
 
 impl<K> CmRDT for RWSet<K>
@@ -97,10 +101,6 @@ where
             } => vec![],
         }
     }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
-    }
 }
 
 impl<K> CvRDT for RWSet<K>
@@ -124,10 +124,6 @@ where
             }
         }
     }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
-    }
 }
 
 impl<K> Delta for RWSet<K>
@@ -139,12 +135,8 @@ where
     fn generate_delta(&self) -> Self::De {
         todo!()
     }
-    fn merge_delta(&mut self, delta: &Self::De) {
+    fn apply_delta(&mut self, delta: &Self::De) {
         todo!()
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 

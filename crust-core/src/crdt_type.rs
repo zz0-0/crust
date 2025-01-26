@@ -20,18 +20,15 @@ pub trait CmRDT {
 
     fn apply(&mut self, op: &Self::Op);
     fn convert_operation(&self, op: TextOperation<Self::Value>) -> Vec<Self::Op>;
-    fn name(&self) -> String;
 }
 pub trait CvRDT {
     fn merge(&mut self, other: &Self);
-    fn name(&self) -> String;
 }
 pub trait Delta {
     type De: Clone;
 
     fn generate_delta(&self) -> Self::De;
-    fn merge_delta(&mut self, delta: &Self::De);
-    fn name(&self) -> String;
+    fn apply_delta(&mut self, delta: &Self::De);
 }
 
 #[derive(Clone)]
@@ -144,6 +141,58 @@ where
             "tpset" => DataType::TPSet(TPSet::<K>::new()),
             // "merkledagtree" => DataType::MerkleDAGTree(MerkleDAGTree::<K>::new()),
             _ => panic!("Invalid CRDT type"),
+        }
+    }
+
+    pub fn insert(&mut self, position: usize, value: K) {
+        match self {
+            DataType::GCounter(crdt) => crdt.increment(value),
+            DataType::PNCounter(crdt) => crdt.increment(value),
+            DataType::AWGraph(crdt) => todo!(),
+            DataType::GGraph(crdt) => todo!(),
+            DataType::ORGraph(crdt) => todo!(),
+            DataType::TPGraph(crdt) => todo!(),
+            // DataType::CMMap(crdt) => todo!(),
+            // DataType::LWWMap(crdt) => todo!(),
+            // DataType::ORMap(crdt) => todo!(),
+            // DataType::RMap(crdt) => todo!(),
+            DataType::LWWRegister(crdt) => todo!(),
+            DataType::MVRegister(crdt) => todo!(),
+            // DataType::Logoot(crdt) => todo!(),
+            // DataType::LSeq(crdt) => todo!(),
+            // DataType::RGA(crdt) => todo!(),
+            DataType::AWSet(crdt) => todo!(),
+            DataType::GSet(crdt) => todo!(),
+            DataType::ORSet(crdt) => todo!(),
+            DataType::RWSet(crdt) => todo!(),
+            DataType::TPSet(crdt) => todo!(),
+            // DataType::MerkleDAGTree(crdt) => todo!(),
+        }
+    }
+
+    pub fn delete(&mut self, position: usize, value: K) {
+        match self {
+            DataType::GCounter(crdt) => todo!(),
+            DataType::PNCounter(crdt) => crdt.decrement(value),
+            DataType::AWGraph(crdt) => todo!(),
+            DataType::GGraph(crdt) => todo!(),
+            DataType::ORGraph(crdt) => todo!(),
+            DataType::TPGraph(crdt) => todo!(),
+            // DataType::CMMap(crdt) => todo!(),
+            // DataType::LWWMap(crdt) => todo!(),
+            // DataType::ORMap(crdt) => todo!(),
+            // DataType::RMap(crdt) => todo!(),
+            DataType::LWWRegister(crdt) => todo!(),
+            DataType::MVRegister(crdt) => todo!(),
+            // DataType::Logoot(crdt) => todo!(),
+            // DataType::LSeq(crdt) => todo!(),
+            // DataType::RGA(crdt) => todo!(),
+            DataType::AWSet(crdt) => todo!(),
+            DataType::GSet(crdt) => todo!(),
+            DataType::ORSet(crdt) => todo!(),
+            DataType::RWSet(crdt) => todo!(),
+            DataType::TPSet(crdt) => todo!(),
+            // DataType::MerkleDAGTree(crdt) => todo!(),
         }
     }
 
@@ -320,7 +369,7 @@ where
         }
     }
 
-    pub fn merge(&mut self, other: Self) {
+    pub fn merge(&mut self, other: &Self) {
         match (self, other) {
             (DataType::GCounter(crdt), DataType::GCounter(other_crdt)) => crdt.merge(&other_crdt),
             (DataType::PNCounter(crdt), DataType::PNCounter(other_crdt)) => crdt.merge(&other_crdt),
@@ -409,32 +458,58 @@ where
         }
     }
 
-    pub fn merge_delta(&mut self, delta: &DataTypeDelta<K>) {
+    pub fn apply_delta(&mut self, delta: &DataTypeDelta<K>) {
         match (self, delta) {
-            (DataType::GCounter(crdt), DataTypeDelta::GCounter(delta)) => crdt.merge_delta(delta),
-            (DataType::PNCounter(crdt), DataTypeDelta::PNCounter(delta)) => crdt.merge_delta(delta),
-            (DataType::AWGraph(crdt), DataTypeDelta::AWGraph(delta)) => crdt.merge_delta(delta),
-            (DataType::GGraph(crdt), DataTypeDelta::GGraph(delta)) => crdt.merge_delta(delta),
-            (DataType::ORGraph(crdt), DataTypeDelta::ORGraph(delta)) => crdt.merge_delta(delta),
-            (DataType::TPGraph(crdt), DataTypeDelta::TPGraph(delta)) => crdt.merge_delta(delta),
-            // (DataType::CMMap(crdt), DataTypeDelta::CMMap(delta)) => crdt.merge_delta(delta),
-            // (DataType::LWWMap(crdt), DataTypeDelta::LWWMap(delta)) => crdt.merge_delta(delta),
-            // (DataType::ORMap(crdt), DataTypeDelta::ORMap(delta)) => crdt.merge_delta(delta),
-            // (DataType::RMap(crdt), DataTypeDelta::RMap(delta)) => crdt.merge_delta(delta),
-            // (DataType::LWWRegister(crdt), DataTypeDelta::LWWRegister(delta)) => crdt.merge_delta(delta),
+            (DataType::GCounter(crdt), DataTypeDelta::GCounter(delta)) => crdt.apply_delta(delta),
+            (DataType::PNCounter(crdt), DataTypeDelta::PNCounter(delta)) => crdt.apply_delta(delta),
+            (DataType::AWGraph(crdt), DataTypeDelta::AWGraph(delta)) => crdt.apply_delta(delta),
+            (DataType::GGraph(crdt), DataTypeDelta::GGraph(delta)) => crdt.apply_delta(delta),
+            (DataType::ORGraph(crdt), DataTypeDelta::ORGraph(delta)) => crdt.apply_delta(delta),
+            (DataType::TPGraph(crdt), DataTypeDelta::TPGraph(delta)) => crdt.apply_delta(delta),
+            // (DataType::CMMap(crdt), DataTypeDelta::CMMap(delta)) => crdt.apply_delta(delta),
+            // (DataType::LWWMap(crdt), DataTypeDelta::LWWMap(delta)) => crdt.apply_delta(delta),
+            // (DataType::ORMap(crdt), DataTypeDelta::ORMap(delta)) => crdt.apply_delta(delta),
+            // (DataType::RMap(crdt), DataTypeDelta::RMap(delta)) => crdt.apply_delta(delta),
+            // (DataType::LWWRegister(crdt), DataTypeDelta::LWWRegister(delta)) => crdt.apply_delta(delta),
             (DataType::MVRegister(crdt), DataTypeDelta::MVRegister(delta)) => {
-                crdt.merge_delta(delta)
+                crdt.apply_delta(delta)
             }
-            // (DataType::Logoot(crdt), DataTypeDelta::(delta)) => crdt.merge_delta(delta),
-            // (DataType::LSeq(crdt), DataTypeDelta::(delta)) => crdt.merge_delta(delta),
-            // (DataType::RGA(crdt), DataTypeDelta::(delta)) => crdt.merge_delta(delta),
-            (DataType::AWSet(crdt), DataTypeDelta::AWSet(delta)) => crdt.merge_delta(delta),
-            (DataType::GSet(crdt), DataTypeDelta::GSet(delta)) => crdt.merge_delta(delta),
-            (DataType::ORSet(crdt), DataTypeDelta::ORSet(delta)) => crdt.merge_delta(delta),
-            (DataType::RWSet(crdt), DataTypeDelta::RWSet(delta)) => crdt.merge_delta(delta),
-            (DataType::TPSet(crdt), DataTypeDelta::TPSet(delta)) => crdt.merge_delta(delta),
-            // (DataType::MerkleDAGTree(crdt), DataTypeDelta::) => crdt.merge_delta(delta),
+            // (DataType::Logoot(crdt), DataTypeDelta::(delta)) => crdt.apply_delta(delta),
+            // (DataType::LSeq(crdt), DataTypeDelta::(delta)) => crdt.apply_delta(delta),
+            // (DataType::RGA(crdt), DataTypeDelta::(delta)) => crdt.apply_delta(delta),
+            (DataType::AWSet(crdt), DataTypeDelta::AWSet(delta)) => crdt.apply_delta(delta),
+            (DataType::GSet(crdt), DataTypeDelta::GSet(delta)) => crdt.apply_delta(delta),
+            (DataType::ORSet(crdt), DataTypeDelta::ORSet(delta)) => crdt.apply_delta(delta),
+            (DataType::RWSet(crdt), DataTypeDelta::RWSet(delta)) => crdt.apply_delta(delta),
+            (DataType::TPSet(crdt), DataTypeDelta::TPSet(delta)) => crdt.apply_delta(delta),
+            // (DataType::MerkleDAGTree(crdt), DataTypeDelta::) => crdt.apply_delta(delta),
             _ => panic!("Cannot merge delta with different CRDT types"),
+        }
+    }
+
+    pub fn name(&self) -> String {
+        match self {
+            DataType::GCounter(crdt) => crdt.name(),
+            DataType::PNCounter(crdt) => crdt.name(),
+            DataType::AWGraph(crdt) => crdt.name(),
+            DataType::GGraph(crdt) => crdt.name(),
+            DataType::ORGraph(crdt) => crdt.name(),
+            DataType::TPGraph(crdt) => crdt.name(),
+            // DataType::CMMap(crdt) => crdt.name(),
+            // DataType::LWWMap(crdt) => crdt.name(),
+            // DataType::ORMap(crdt) => crdt.name(),
+            // DataType::RMap(crdt) => crdt.name(),
+            DataType::LWWRegister(crdt) => crdt.name(),
+            DataType::MVRegister(crdt) => crdt.name(),
+            // DataType::Logoot(crdt) => crdt.name(),
+            // DataType::LSeq(crdt) => crdt.name(),
+            // DataType::RGA(crdt) => crdt.name(),
+            DataType::AWSet(crdt) => crdt.name(),
+            DataType::GSet(crdt) => crdt.name(),
+            DataType::ORSet(crdt) => crdt.name(),
+            DataType::RWSet(crdt) => crdt.name(),
+            DataType::TPSet(crdt) => crdt.name(),
+            // DataType::MerkleDAGTree(crdt) => crdt.name(),
         }
     }
 }

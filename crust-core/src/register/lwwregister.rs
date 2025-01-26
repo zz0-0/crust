@@ -45,6 +45,10 @@ where
         self.value = value.into();
         self.timestamp = get_current_timestamp();
     }
+
+    pub fn name(&self) -> String {
+        "LWWRegister".to_string()
+    }
 }
 
 impl<K> CmRDT for LWWRegister<K>
@@ -79,10 +83,6 @@ where
             } => todo!(),
         }
     }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
-    }
 }
 
 impl<K> CvRDT for LWWRegister<K>
@@ -97,10 +97,6 @@ where
             self.timestamp = other.timestamp;
             self.replica_id = other.replica_id
         }
-    }
-
-    fn name(&self) -> String {
-        "PNCounter".to_string()
     }
 }
 

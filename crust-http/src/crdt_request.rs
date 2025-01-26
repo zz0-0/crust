@@ -4,7 +4,7 @@ type StringDataType = DataType<String>;
 // type CharacterDataType = DataType<char>;
 // type NumberDataType = DataType<u64>;
 
-trait DataTypeExt {
+pub trait DataTypeExt {
     fn get_or_create(crdt_type: String) -> Self;
 }
 
@@ -22,6 +22,7 @@ use std::sync::Mutex;
 
 use axum::{extract::Path, response::IntoResponse, Json};
 use crust_core::{
+    crdt_benchmark::{CRDTBenchmark, SingleInsertEnd},
     crdt_type::DataType,
     get_current_timestamp,
     text_operation::{Message, TextOperation},
@@ -98,7 +99,7 @@ pub async fn send_state(Path((crdt_type, state)): Path<(String, String)>) -> imp
     let mut data_type: DataType<String> = DataType::get_or_create(crdt_type.clone());
     let mut data_type2: DataType<String> = DataType::new(crdt_type.clone());
     data_type2.to_crdt(state);
-    data_type.merge(data_type2);
+    data_type.merge(&data_type2);
     (StatusCode::OK, Json(json!(data_type.to_string())))
 }
 
@@ -109,7 +110,7 @@ pub async fn send_state_with_timestamp(
     let mut data_type2: DataType<String> = DataType::new(crdt_type.clone());
     data_type2.to_crdt(state);
     let timestamp1 = get_current_timestamp();
-    data_type.merge(data_type2);
+    data_type.merge(&data_type2);
     let timestamp2 = get_current_timestamp();
     (
         StatusCode::OK,
@@ -128,7 +129,7 @@ pub async fn send_delta(Path((crdt_type, delta)): Path<(String, String)>) -> imp
     let mut data_type: DataType<String> = DataType::get_or_create(crdt_type.clone());
     let mut data_type2 = DataType::new(crdt_type.clone());
     let delta = data_type2.to_delta(delta);
-    data_type.merge_delta(&delta);
+    data_type.apply_delta(&delta);
     (StatusCode::OK, Json(json!(data_type.to_string())))
 }
 
@@ -139,7 +140,7 @@ pub async fn send_delta_with_timestamp(
     let mut data_type2 = DataType::new(crdt_type.clone());
     let delta = data_type2.to_delta(delta);
     let timestamp1 = get_current_timestamp();
-    data_type.merge_delta(&delta);
+    data_type.apply_delta(&delta);
     let timestamp2 = get_current_timestamp();
     (
         StatusCode::OK,
@@ -160,4 +161,18 @@ pub async fn info() -> impl IntoResponse {
         StatusCode::OK,
         Json(json!(instance.as_ref().unwrap().to_string())),
     )
+}
+
+pub async fn send_benchmark(
+    Path((crdt_type, iterations)): Path<(String, u32)>,
+) -> impl IntoResponse {
+    let mut data_type: DataType<String> = DataType::get_or_create(crdt_type);
+    SingleInsertEnd::benchmark_cmrdt_result(
+        &SingleInsertEnd,
+        &mut data_type,
+        "a".to_string(),
+        iterations,
+    );
+
+    (StatusCode::OK)
 }

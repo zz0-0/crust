@@ -1,22 +1,29 @@
 use std::time::Instant;
 
+// use crate::crdt_type::{CmRDT, CvRDT, DataType, Delta};
+use serde::{Deserialize, Serialize};
+use std::hash::Hash;
 use tracing::{info, span, Level};
 
-use crate::crdt_type::{CmRDT, CvRDT, Delta};
+use crate::{crdt_type::DataType, text_operation::TextOperation};
 
-trait CvRDTBenchmark<K: CvRDT> {
+pub trait CRDTBenchmark<K>
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
     fn benchmark_name(&self) -> String;
-    fn benchmark_result(&self, crdt: &mut K, iterations: u32) {
+
+    fn benchmark_cmrdt_result(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
         let mut system = sysinfo::System::new_all();
         let span = span!(
             Level::INFO,
             "Benchmark Type",
-            operation = crdt.name() + self.benchmark_name().as_str()
+            operation = crdt.name() + "Operation base" + self.benchmark_name().as_str()
         );
 
         let _enter = span.enter();
         let start = Instant::now();
-        self.run_benchmark(crdt, iterations);
+        self.run_cmrdt_benchmark(crdt, value, iterations);
         let duration = start.elapsed();
         info!(latency = ?duration, "Duration of iterations");
         system.refresh_cpu_usage();
@@ -29,22 +36,18 @@ trait CvRDTBenchmark<K: CvRDT> {
         info!(avg_cpu_usage = ?cpu_usage / iterations as f32, "Average CPU usage of iterations");
         info!(avg_memory_usage = ?memory_usage / iterations as u64, "Average memory usage of iterations");
     }
-    fn run_benchmark(&self, crdt: &mut K, iterations: u32);
-}
 
-trait CmRDTBenchmark<K: CmRDT> {
-    fn benchmark_name(&self) -> String;
-    fn benchmark_result(&self, crdt: &mut K, iterations: u32) {
+    fn benchmark_cvrdt_result(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
         let mut system = sysinfo::System::new_all();
         let span = span!(
             Level::INFO,
             "Benchmark Type",
-            operation = crdt.name() + self.benchmark_name().as_str()
+            operation = crdt.name() + "State base" + self.benchmark_name().as_str()
         );
 
         let _enter = span.enter();
         let start = Instant::now();
-        self.run_benchmark(crdt, iterations);
+        self.run_cvrdt_benchmark(crdt, value, iterations);
         let duration = start.elapsed();
         info!(latency = ?duration, "Duration of iterations");
         system.refresh_cpu_usage();
@@ -57,22 +60,18 @@ trait CmRDTBenchmark<K: CmRDT> {
         info!(avg_cpu_usage = ?cpu_usage / iterations as f32, "Average CPU usage of iterations");
         info!(avg_memory_usage = ?memory_usage / iterations as u64, "Average memory usage of iterations");
     }
-    fn run_benchmark(&self, crdt: &mut K, iterations: u32);
-}
 
-trait DeltaBenchmark<K: Delta> {
-    fn benchmark_name(&self) -> String;
-    fn benchmark_result(&self, crdt: &mut K, iterations: u32) {
+    fn benchmark_delta_result(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
         let mut system = sysinfo::System::new_all();
         let span = span!(
             Level::INFO,
             "Benchmark Type",
-            operation = crdt.name() + self.benchmark_name().as_str()
+            operation = crdt.name() + "Delta base" + self.benchmark_name().as_str()
         );
 
         let _enter = span.enter();
         let start = Instant::now();
-        self.run_benchmark(crdt, iterations);
+        self.run_delta_benchmark(crdt, value, iterations);
         let duration = start.elapsed();
         info!(latency = ?duration, "Duration of iterations");
         system.refresh_cpu_usage();
@@ -85,25 +84,57 @@ trait DeltaBenchmark<K: Delta> {
         info!(avg_cpu_usage = ?cpu_usage / iterations as f32, "Average CPU usage of iterations");
         info!(avg_memory_usage = ?memory_usage / iterations as u64, "Average memory usage of iterations");
     }
-    fn run_benchmark(&self, crdt: &mut K, iterations: u32);
+
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32);
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32);
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32);
 }
 
-struct SingleInsertEnd;
-struct SingleDeleteEnd;
-struct LongStringInsert;
-struct LongStringDelete;
-struct SingleInsertMiddle;
-struct SingleDeleteMiddle;
-struct ConcurrentInsertSame;
-struct ConcurrentInsertDifferent;
-struct ConcurrentDeleteSame;
-struct ConcurrentDeleteDifferent;
-struct ConcurrentInsertDeleteSame;
-struct ConcurrentInsertDeleteDifferent;
+pub struct SingleInsertEnd;
+pub struct SingleDeleteEnd;
+pub struct LongStringInsert;
+pub struct LongStringDelete;
+pub struct SingleInsertMiddle;
+pub struct SingleDeleteMiddle;
+pub struct ConcurrentInsertSame;
+pub struct ConcurrentInsertDifferent;
+pub struct ConcurrentDeleteSame;
+pub struct ConcurrentDeleteDifferent;
+pub struct ConcurrentInsertDeleteSame;
+pub struct ConcurrentInsertDeleteDifferent;
 
-impl<K: CvRDT> CvRDTBenchmark<K> for SingleInsertEnd {
-    fn run_benchmark(&self, crdt: &mut K, iterations: u32) {
-        todo!()
+impl<K> CRDTBenchmark<K> for SingleInsertEnd
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
+        }
+    }
+
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
+        }
+    }
+
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
+        }
     }
 
     fn benchmark_name(&self) -> String {
@@ -111,77 +142,383 @@ impl<K: CvRDT> CvRDTBenchmark<K> for SingleInsertEnd {
     }
 }
 
-impl<K: CmRDT> CmRDTBenchmark<K> for SingleInsertEnd {
-    fn run_benchmark(&self, crdt: &mut K, iterations: u32) {
-        todo!()
+impl<K> CRDTBenchmark<K> for SingleDeleteEnd
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
+        }
+    }
+
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
+        }
+    }
+
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
+        }
     }
 
     fn benchmark_name(&self) -> String {
         "Single Insert End".to_string()
     }
 }
+impl<K> CRDTBenchmark<K> for LongStringInsert
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
+        }
+    }
 
-impl<K: Delta> DeltaBenchmark<K> for SingleInsertEnd {
-    fn run_benchmark(&self, crdt: &mut K, iterations: u32) {
-        todo!()
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
+        }
+    }
+
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
+        }
     }
 
     fn benchmark_name(&self) -> String {
         "Single Insert End".to_string()
     }
 }
+impl<K> CRDTBenchmark<K> for LongStringDelete
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
+        }
+    }
 
-struct BenchmarkRunner<K> {
-    cv_scenarios: Vec<Box<dyn CvRDTBenchmark<K>>>,
-    cm_scenarios: Vec<Box<dyn CmRDTBenchmark<K>>>,
-    delta_scenarios: Vec<Box<dyn DeltaBenchmark<K>>>,
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
+        }
+    }
+
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
+        }
+    }
+
+    fn benchmark_name(&self) -> String {
+        "Single Insert End".to_string()
+    }
 }
-
-impl<K> BenchmarkRunner<K> {
-    fn new() -> Self {
-        BenchmarkRunner {
-            cv_scenarios: Vec::new(),
-            cm_scenarios: Vec::new(),
-            delta_scenarios: Vec::new(),
+impl<K> CRDTBenchmark<K> for SingleDeleteMiddle
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
         }
     }
 
-    pub fn add_cv_benchmark(&mut self, benchmark: Box<dyn CvRDTBenchmark<K>>) {
-        self.cv_scenarios.push(benchmark);
-    }
-
-    pub fn add_cm_benchmark(&mut self, benchmark: Box<dyn CmRDTBenchmark<K>>) {
-        self.cm_scenarios.push(benchmark);
-    }
-
-    pub fn add_delta_benchmark(&mut self, benchmark: Box<dyn DeltaBenchmark<K>>) {
-        self.delta_scenarios.push(benchmark);
-    }
-
-    pub fn run_cv_benchmarks(&self, crdt: &mut K)
-    where
-        K: CvRDT,
-    {
-        for scenario in &self.cv_scenarios {
-            scenario.benchmark_result(crdt, 1000);
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
         }
     }
 
-    pub fn run_cm_benchmarks(&self, crdt: &mut K)
-    where
-        K: CmRDT,
-    {
-        for scenario in &self.cm_scenarios {
-            scenario.benchmark_result(crdt, 1000);
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
         }
     }
 
-    pub fn run_delta_benchmarks(&self, crdt: &mut K)
-    where
-        K: Delta,
-    {
-        for scenario in &self.delta_scenarios {
-            scenario.benchmark_result(crdt, 1000);
+    fn benchmark_name(&self) -> String {
+        "Single Insert End".to_string()
+    }
+}
+impl<K> CRDTBenchmark<K> for ConcurrentInsertSame
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
         }
+    }
+
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
+        }
+    }
+
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
+        }
+    }
+
+    fn benchmark_name(&self) -> String {
+        "Single Insert End".to_string()
+    }
+}
+impl<K> CRDTBenchmark<K> for ConcurrentInsertDifferent
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
+        }
+    }
+
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
+        }
+    }
+
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
+        }
+    }
+
+    fn benchmark_name(&self) -> String {
+        "Single Insert End".to_string()
+    }
+}
+impl<K> CRDTBenchmark<K> for ConcurrentDeleteSame
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
+        }
+    }
+
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
+        }
+    }
+
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
+        }
+    }
+
+    fn benchmark_name(&self) -> String {
+        "Single Insert End".to_string()
+    }
+}
+impl<K> CRDTBenchmark<K> for ConcurrentDeleteDifferent
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
+        }
+    }
+
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
+        }
+    }
+
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
+        }
+    }
+
+    fn benchmark_name(&self) -> String {
+        "Single Insert End".to_string()
+    }
+}
+impl<K> CRDTBenchmark<K> for ConcurrentInsertDeleteSame
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
+        }
+    }
+
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
+        }
+    }
+
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
+        }
+    }
+
+    fn benchmark_name(&self) -> String {
+        "Single Insert End".to_string()
+    }
+}
+impl<K> CRDTBenchmark<K> for ConcurrentInsertDeleteDifferent
+where
+    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+{
+    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let text_operation = TextOperation::Insert {
+            position: usize::MAX,
+            value: value,
+        };
+        let ops = crdt.convert_operation(text_operation);
+        for _ in 0..iterations {
+            for op in ops.clone().into_iter() {
+                crdt.apply_operation(op);
+            }
+        }
+    }
+
+    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            crdt.merge(&other);
+        }
+    }
+
+    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+        let mut other = crdt.clone();
+        for _ in 0..iterations {
+            other.insert(usize::MAX, value.clone());
+            let delta = other.generate_delta();
+            crdt.apply_delta(&delta);
+        }
+    }
+
+    fn benchmark_name(&self) -> String {
+        "Single Insert End".to_string()
     }
 }
