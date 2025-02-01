@@ -1,11 +1,11 @@
 use std::time::Instant;
 
-// use crate::crdt_type::{CmRDT, CvRDT, DataType, Delta};
+use crate::crdt_data_type::DataType;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use tracing::{info, span, Level};
 
-use crate::{crdt_type::DataType, text_operation::TextOperation};
+use crate::text_operation::TextOperation;
 
 pub trait CRDTBenchmark<K>
 where
@@ -94,8 +94,8 @@ pub struct SingleInsertEnd;
 pub struct SingleDeleteEnd;
 pub struct LongStringInsert;
 pub struct LongStringDelete;
-pub struct SingleInsertMiddle;
-pub struct SingleDeleteMiddle;
+// pub struct SingleInsertMiddle;
+// pub struct SingleDeleteMiddle;
 pub struct ConcurrentInsertSame;
 pub struct ConcurrentInsertDifferent;
 pub struct ConcurrentDeleteSame;
@@ -256,44 +256,44 @@ where
         "Single Insert End".to_string()
     }
 }
-impl<K> CRDTBenchmark<K> for SingleDeleteMiddle
-where
-    K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
-{
-    fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
-        let text_operation = TextOperation::Insert {
-            position: usize::MAX,
-            value: value,
-        };
-        let ops = crdt.convert_operation(text_operation);
-        for _ in 0..iterations {
-            for op in ops.clone().into_iter() {
-                crdt.apply_operation(op);
-            }
-        }
-    }
+// impl<K> CRDTBenchmark<K> for SingleDeleteMiddle
+// where
+//     K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,
+// {
+//     fn run_cmrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+//         let text_operation = TextOperation::Insert {
+//             position: usize::MAX,
+//             value: value,
+//         };
+//         let ops = crdt.convert_operation(text_operation);
+//         for _ in 0..iterations {
+//             for op in ops.clone().into_iter() {
+//                 crdt.apply_operation(op);
+//             }
+//         }
+//     }
 
-    fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
-        let mut other = crdt.clone();
-        for _ in 0..iterations {
-            other.insert(usize::MAX, value.clone());
-            crdt.merge(&other);
-        }
-    }
+//     fn run_cvrdt_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+//         let mut other = crdt.clone();
+//         for _ in 0..iterations {
+//             other.insert(usize::MAX, value.clone());
+//             crdt.merge(&other);
+//         }
+//     }
 
-    fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
-        let mut other = crdt.clone();
-        for _ in 0..iterations {
-            other.insert(usize::MAX, value.clone());
-            let delta = other.generate_delta();
-            crdt.apply_delta(&delta);
-        }
-    }
+//     fn run_delta_benchmark(&self, crdt: &mut DataType<K>, value: K, iterations: u32) {
+//         let mut other = crdt.clone();
+//         for _ in 0..iterations {
+//             other.insert(usize::MAX, value.clone());
+//             let delta = other.generate_delta();
+//             crdt.apply_delta(&delta);
+//         }
+//     }
 
-    fn benchmark_name(&self) -> String {
-        "Single Insert End".to_string()
-    }
-}
+//     fn benchmark_name(&self) -> String {
+//         "Single Insert End".to_string()
+//     }
+// }
 impl<K> CRDTBenchmark<K> for ConcurrentInsertSame
 where
     K: Eq + Clone + Hash + Ord + Serialize + for<'a> Deserialize<'a>,

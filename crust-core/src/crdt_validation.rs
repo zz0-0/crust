@@ -1,4 +1,4 @@
-use crate::crdt_type::{CmRDT, CvRDT, Delta};
+use crate::crdt_sync_type::{CmRDT, CvRDT, Delta};
 
 pub trait CvRDTValidation<K>
 where

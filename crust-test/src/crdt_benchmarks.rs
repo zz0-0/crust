@@ -1,4 +1,4 @@
-use crust_core::crdt_type::DataType;
+use crust_core::crdt_data_type::DataType;
 use crust_core::text_operation::TextOperation;
 use k8s_openapi::api::core::v1::Pod;
 use serde::Serialize;

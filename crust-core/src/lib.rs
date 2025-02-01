@@ -1,16 +1,12 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub mod counter;
-pub mod crdt_type;
-pub mod crdt_validation;
-pub mod graph;
-// pub mod map;
 pub mod crdt_benchmark;
-pub mod register;
-pub mod sequence;
-pub mod set;
+pub mod crdt_data_type;
+pub mod crdt_data_type_impl;
+pub mod crdt_sync_type;
+pub mod crdt_validation;
+pub mod crdt_validation_impl;
 pub mod text_operation;
-pub mod tree;
 
 pub fn get_current_timestamp() -> u128 {
     SystemTime::now()

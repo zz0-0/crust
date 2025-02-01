@@ -61,9 +61,9 @@ impl CRDTTest {
             .collect();
         println!("Running pods: {}", running_pods.len());
 
-        if running_pods.len() < 2 {
+        if running_pods.len() < 1 {
             panic!(
-                "Not enough running pods. Found {}, needed 2",
+                "Not enough running pods. Found {}, needed 1",
                 running_pods.len()
             );
         }

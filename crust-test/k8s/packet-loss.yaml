@@ -1,0 +1,14 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: packet-loss
+  namespace: default
+spec:
+  action: loss
+  mode: one
+  selector:
+    labelSelectors:
+      app: crust-http
+  loss:
+    loss: "30" # percentage of packet loss
+    correlation: "0"

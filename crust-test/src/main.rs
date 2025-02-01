@@ -1,7 +1,6 @@
 use axum::{routing::get, Router};
 use std::sync::Arc;
 
-
 // pub mod crdt_benchmark;
 // pub mod crdt_test;
 
@@ -11,7 +10,6 @@ pub mod crdt_tests;
 #[tokio::main]
 async fn main() {
     // let test_controller = Arc::new(crdt_test::TestController::new().await);
-
 
     let app = Router::new()
         // .route(
