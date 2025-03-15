@@ -1,7 +1,13 @@
-[workspace.package]
+[package]
+name = "crust"
 version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["crust-core", "crust-http", "crust-test"]
-resolver = "2"
+members = [
+    "crust_benchmark",
+    "crust_config",
+    "crust_core",
+    "crust_network",
+    "crust_validation",
+]

@@ -84,6 +84,12 @@ Each data type will include implementations of **CmRDT**, **CvRDT**, and **Delta
 - [ ] Write unit tests for **RWSet**.
 - [ ] Write unit tests for **TPSet**.
 
+### Docker
+
+```dockerfile
+docker build -f crust-http/Dockerfile -t crust-http .
+```
+
 </details>
 
 ## 🤝 Contributing

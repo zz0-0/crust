@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crust-network
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: crust-network
+  template:
+    metadata:
+      labels:
+        app: crust-network
+    spec:
+      serviceAccountName: crust-network-account
+      containers:
+        - name: crust-network
+          image: crust-network
+          imagePullPolicy: Never
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8000
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace

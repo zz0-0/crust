@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: crust-http-config
-data:
-  REPLICA_COUNT: "3"
-  SERVICE_NAME: "crust-http-service"

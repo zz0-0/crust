@@ -1,0 +1,65 @@
+
+# [benchmark_run]
+# name = "crdt_benchmark"
+# crdt_type = ["gcounter"]
+# output_directory = "benchmark_results/"
+
+# sync_types = ["state", "operation", "delta"]
+# sync_modes = ["immediate", "batch_time_based", "batch_count_based"]
+# replica_counts = [2, 3, 5, 10, 50, 100]
+# load_levels = ["low", "medium", "high"]
+# latency_levels = ["none", "low", "medium"]
+
+# [kubernetes]
+# manifest_template_path = "config/k8s/deployment.yaml"
+# namespace = "default"
+# wait_timeout_seconds = 180
+
+# [load_profiles]
+
+# [load_profiles.low]
+# description = "Low load - 10 ops/sec per instance"
+# operations_per_sec_per_instance = 10
+
+# [load_profiles.medium]
+# description = "Medium load - 100 ops/sec per instance"
+# operations_per_sec_per_instance = 100
+
+# [load_profiles.high]
+# description = "High load - 500 ops/sec per instance"
+# operations_per_sec_per_instance = 500
+
+# [latency_profiles]
+
+# [latency_profiles.none]
+# description = "No added latency"
+# profile_type = "none"
+
+# [latency_profiles.low]
+# description = "Low fixed latency - 10ms"
+# profile_type = "fixed"
+# delay_ms = 10
+
+# [latency_profiles.medium]
+# description = "Medium fixed latency - 50ms"
+# profile_type = "fixed"
+# delay_ms = 50
+
+# [metrics_collection]
+# enabled_metrics = [
+#     "operation_latency",
+#     "throughput",
+#     "cpu_usage",
+#     "memory_usage",
+# ]
+# prometheus_query_interval_seconds = 15
+# metrics_output_file = "metrics_data.csv"
+
+# [run_parameters]
+# benchmark_duration_seconds = 60
+# operations_per_benchmark_run = 10000
+# time_between_runs_seconds = 10
+
+# [synchronization_settings]
+# batch_interval_seconds = 5
+# batch_operation_count = 100

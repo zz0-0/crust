@@ -1,0 +1,16 @@
+[package]
+name = "crust_network"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crust_core = { path = "../crust_core" }
+crust_config = { path = "../crust_config" }
+tokio = { version = "1.43.0", features = ["full"] }
+axum = "0.8.1"
+axum-macros = "0.5.0"
+reqwest = { version = "0.12.12", features = ["json"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"
+kube = { version = "0.98.0", features = ["runtime", "derive"] }
+k8s-openapi = { version = "0.24.0", features = ["latest"] }

@@ -1,0 +1,11 @@
+[package]
+name = "crust_benchmark"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crust_core = { path = "../crust_core" }
+crust_config = { path = "../crust_config" }
+tokio = { version = "1.43.0", features = ["full"] }
+toml = "0.8.20"
+rand = "0.9.0"
