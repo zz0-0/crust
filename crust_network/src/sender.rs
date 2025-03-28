@@ -14,6 +14,13 @@ pub struct NetworkSender {
     replica_pod_name: String,
     replica_service_name: String,
     replica_pod_names: Vec<String>,
+    #[cfg(any(
+        feature = "byzantine",
+        feature = "confidentiality",
+        feature = "integrity",
+        feature = "access_control"
+    ))]
+    security: Option<Box<dyn SecurityHook<K> + Send + Sync>>,
 }
 
 impl NetworkSender {
@@ -35,6 +42,12 @@ impl NetworkSender {
         NetworkMessage<K>: Serialize,
         K: Eq + Hash,
     {
+        #[cfg(feature = "integrity")]
+        let message = self.security.sign_data(message);
+
+        #[cfg(feature = "confidentiality")]
+        let message = self.security.encrypt_data(message);
+
         let res = self.client.get(url).json(message).send();
         let request_response = match res.await {
             Ok(res) => res,

@@ -9,5 +9,6 @@ members = [
     "crust_config",
     "crust_core",
     "crust_network",
+    "crust_security",
     "crust_validation",
 ]

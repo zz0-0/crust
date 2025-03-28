@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use crate::command::CrdtInnerCommand;
+
 pub trait Crdt {
     type State;
     fn new() -> Self::State;
@@ -19,6 +21,11 @@ pub trait DeltaBased: Crdt {
     fn generate_delta(&self) -> Self::Delta;
     fn merge_delta(&mut self, other: &Self::Delta) -> Self::State;
     fn aggregate_deltas(&mut self, deltas: Vec<Self::Delta>) -> Option<Self::Delta>;
+}
+
+pub trait ConstraintEnforcing<K>: Crdt {
+    fn check_constraints(&self, command: &CrdtInnerCommand<K>) -> bool;
+    fn repair_constraints(&mut self) -> Self::State;
 }
 
 #[derive(Clone, Copy)]
@@ -50,7 +57,9 @@ impl SyncType {
 #[derive(Clone, Copy)]
 pub enum SyncMode {
     Immediate,
+    #[cfg(feature = "batch")]
     BatchTimeBased,
+    #[cfg(feature = "batch")]
     BatchCountBased,
 }
 
@@ -58,7 +67,9 @@ impl SyncMode {
     pub fn new(name: String) -> Self {
         match name.as_str() {
             "immediate" => SyncMode::Immediate,
+            #[cfg(feature = "batch")]
             "batch_time_based" => SyncMode::BatchTimeBased,
+            #[cfg(feature = "batch")]
             "batch_count_based" => SyncMode::BatchCountBased,
             _ => panic!("Unknown sync mode"),
         }
@@ -67,7 +78,9 @@ impl SyncMode {
     pub fn to_string(&self) -> String {
         match self {
             SyncMode::Immediate => "immediate".to_string(),
+            #[cfg(feature = "batch")]
             SyncMode::BatchTimeBased => "batch_time_based".to_string(),
+            #[cfg(feature = "batch")]
             SyncMode::BatchCountBased => "batch_count_based".to_string(),
         }
     }
@@ -77,7 +90,10 @@ impl SyncMode {
 pub struct SyncConfig {
     pub sync_type: SyncType,
     pub sync_mode: SyncMode,
+    #[cfg(feature = "batch")]
     pub batch_times: Option<usize>,
+    #[cfg(feature = "batch")]
     pub batching_interval: Option<Duration>,
+    #[cfg(feature = "batch")]
     pub last_batch_check_timestamp: Option<i64>,
 }

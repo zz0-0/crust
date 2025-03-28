@@ -17,6 +17,7 @@ use crust_config::{
 use crust_core::{
     command::CrdtInnerCommand,
     r#type::CrdtType,
+    security,
     sync::{SyncConfig, SyncMode, SyncType},
 };
 use reqwest::StatusCode;
@@ -67,29 +68,44 @@ where
     CrdtType<String>: Clone,
 {
     let mut crdt = state.get_or_create_crdt_type(crdt_type);
+
+    #[cfg(any(
+        feature = "byzantine",
+        feature = "confidentiality",
+        feature = "integrity",
+        feature = "access_control"
+    ))]
+    let security = state.security.clone();
+
+    #[cfg(feature = "integrity")]
+    let message = security.sign_data(message);
+
+    #[cfg(feature = "confidentiality")]
+    let message = security.encrypt_data(message);
+
     match &message {
         NetworkMessage::Operation {
-            operation,
+            payload,
             sender_pod_name,
         } => {
             if *sender_pod_name != get_current_pod_name() {
-                crdt.apply(operation);
+                crdt.apply(payload);
             }
         }
         NetworkMessage::Delta {
-            delta,
+            payload,
             sender_pod_name,
         } => {
             if *sender_pod_name != get_current_pod_name() {
-                crdt.merge_delta(delta);
+                crdt.merge_delta(payload);
             }
         }
         NetworkMessage::State {
-            state,
+            payload,
             sender_pod_name,
         } => {
             if *sender_pod_name != get_current_pod_name() {
-                crdt.merge(state);
+                crdt.merge(payload);
             }
         }
     }
@@ -136,8 +152,11 @@ where
     let mut sync_config = SyncConfig {
         sync_type: SyncType::new(sync_type),
         sync_mode: SyncMode::new(sync_mode),
+        #[cfg(feature = "batch")]
         batch_times: Some(3), // Example for BatchCountBased
+        #[cfg(feature = "batch")]
         batching_interval: Some(Duration::from_secs(5)), // Example for BatchTimeBased
+        #[cfg(feature = "batch")]
         last_batch_check_timestamp: None, // Example for BatchTimeBased
     };
 
@@ -176,13 +195,13 @@ where
     match sync_config.sync_mode {
         SyncMode::Immediate => match sync_config.sync_type {
             SyncType::Delta => Some(NetworkMessage::Delta {
-                delta: crdt.generate_delta(),
+                payload: crdt.generate_delta(),
                 sender_pod_name: pod_name,
             }),
             SyncType::Operation => {
                 if let Some(operation) = operation {
                     Some(NetworkMessage::Operation {
-                        operation: operation,
+                        payload: operation,
                         sender_pod_name: pod_name,
                     })
                 } else {
@@ -190,15 +209,16 @@ where
                 }
             }
             SyncType::State => Some(NetworkMessage::State {
-                state: crdt.clone(),
+                payload: crdt.clone(),
                 sender_pod_name: pod_name,
             }),
         },
+        #[cfg(feature = "batch")]
         SyncMode::BatchTimeBased => match sync_config.sync_type {
             SyncType::Delta => {
                 if let Some(delta) = crdt.generate_delta_time_based(sync_config) {
                     Some(NetworkMessage::Delta {
-                        delta: delta,
+                        payload: delta,
                         sender_pod_name: pod_name,
                     })
                 } else {
@@ -208,7 +228,7 @@ where
             SyncType::Operation => {
                 if let Some(operation) = crdt.generate_operation_time_based(sync_config) {
                     Some(NetworkMessage::Operation {
-                        operation: operation,
+                        payload: operation,
                         sender_pod_name: pod_name,
                     })
                 } else {
@@ -216,15 +236,16 @@ where
                 }
             }
             SyncType::State => Some(NetworkMessage::State {
-                state: crdt.clone(),
+                payload: crdt.clone(),
                 sender_pod_name: pod_name,
             }),
         },
+        #[cfg(feature = "batch")]
         SyncMode::BatchCountBased => match sync_config.sync_type {
             SyncType::Delta => {
                 if let Some(delta) = crdt.generate_delta_count_based(sync_config) {
                     Some(NetworkMessage::Delta {
-                        delta: delta,
+                        payload: delta,
                         sender_pod_name: pod_name,
                     })
                 } else {
@@ -234,7 +255,7 @@ where
             SyncType::Operation => {
                 if let Some(operation) = crdt.generate_operation_count_based(sync_config) {
                     Some(NetworkMessage::Operation {
-                        operation: operation,
+                        payload: operation,
                         sender_pod_name: pod_name,
                     })
                 } else {
@@ -242,7 +263,7 @@ where
                 }
             }
             SyncType::State => Some(NetworkMessage::State {
-                state: crdt.clone(),
+                payload: crdt.clone(),
                 sender_pod_name: pod_name,
             }),
         },

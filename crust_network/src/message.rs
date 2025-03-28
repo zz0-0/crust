@@ -8,15 +8,15 @@ where
     K: Eq + Hash,
 {
     Operation {
-        operation: CrdtOperation<K>,
+        payload: CrdtOperation<K>,
         sender_pod_name: String,
     },
     Delta {
-        delta: CrdtDelta<K>,
+        payload: CrdtDelta<K>,
         sender_pod_name: String,
     },
     State {
-        state: CrdtType<K>,
+        payload: CrdtType<K>,
         sender_pod_name: String,
     },
 }

@@ -366,6 +366,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "crust_security"
+version = "0.1.0"
+
+[[package]]
 name = "crust_validation"
 version = "0.1.0"
 dependencies = [
