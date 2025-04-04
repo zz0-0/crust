@@ -233,7 +233,7 @@ mod state_convergence {
             }
             println!("✅ Increment operation sent successfully");
 
-            // Short delay for operation to be processed locally
+            
             tokio::time::sleep(Duration::from_millis(500)).await;
 
             println!("\nStep 3/6: Verifying first instance local state");
@@ -301,7 +301,7 @@ mod state_convergence {
                     let counter_value = state.get_state();
                     println!("✅ State retrieved: {:?}", counter_value);
 
-                    // Verify this instance doesn't yet have the other's update
+                    
                     let value = counter_value["value"].as_str().unwrap_or("0");
                     if value == increment_value_2 {
                         println!(
@@ -419,10 +419,10 @@ mod state_convergence {
             println!("✅ Environment setup complete");
 
             println!("\nStep 2/6: Preparing high-load test operations");
-            let num_operations = 50; // High load with 50 operations
+            let num_operations = 50; 
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
 
-            // Create sequential increment values to make validation simpler
+            
             let mut total_expected = 0;
             let mut operations = Vec::with_capacity(num_operations);
             for i in 1..=num_operations {
@@ -438,7 +438,7 @@ mod state_convergence {
             let mut handles = Vec::new();
 
             for (i, (value, _)) in operations.iter().enumerate() {
-                // Round-robin distribution across instances
+                
                 let target_idx = i % instance_ids.len();
                 let instance_id = &instance_ids[target_idx];
                 let service_url = service_urls.get(instance_id).unwrap().clone();
@@ -446,7 +446,7 @@ mod state_convergence {
                 let instance_id_clone = instance_id.clone();
                 let value_clone = value.clone();
 
-                // Create a task for each operation
+                
                 handles.push(tokio::spawn(async move {
                     println!(
                         "→ Sending increment {} to instance {}",

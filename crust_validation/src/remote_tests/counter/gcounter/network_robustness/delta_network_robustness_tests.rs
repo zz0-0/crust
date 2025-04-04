@@ -28,7 +28,7 @@ mod delta_network_robustness {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "delta", // Using delta-based synchronization
+                "delta", 
                 "immediate",
                 None,
                 None,
@@ -43,7 +43,7 @@ mod delta_network_robustness {
             }
             println!("✅ Environment setup complete");
 
-            // Get instance info for testing
+            
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
             let instance_1 = &instance_ids[0];
             let instance_2 = &instance_ids[1];
@@ -58,7 +58,7 @@ mod delta_network_robustness {
             );
 
             println!("\nStep 2/6: Configuring message loss simulation");
-            // Simulate substantial message loss (50%)
+            
             let message_loss_rate = 0.5;
             println!(
                 "→ Setting message loss rate to {}%",
@@ -69,7 +69,7 @@ mod delta_network_robustness {
 
             println!("\nStep 3/6: Sending operations with simulated delta message loss");
 
-            // Send operation to first instance with message loss
+            
             let increment_value_1 = "7";
             println!(
                 "→ Sending increment {} to instance {} with {}% message loss",
@@ -97,7 +97,7 @@ mod delta_network_robustness {
                 return false;
             }
 
-            // Send operation to second instance with message loss
+            
             let increment_value_2 = "3";
             println!(
                 "→ Sending increment {} to instance {} with {}% message loss",
@@ -125,7 +125,7 @@ mod delta_network_robustness {
                 return false;
             }
 
-            // Send operation to third instance with message loss
+            
             let increment_value_3 = "5";
             println!(
                 "→ Sending increment {} to instance {} with {}% message loss",
@@ -155,7 +155,7 @@ mod delta_network_robustness {
 
             println!("✅ All operations sent with simulated delta message loss");
 
-            // Step 4: Check immediate states (will likely be inconsistent)
+            
             println!("\nStep 4/6: Checking immediate states (expect inconsistency due to delta message loss)");
             let mut initial_states = HashMap::new();
 
@@ -179,14 +179,14 @@ mod delta_network_robustness {
                 }
             }
 
-            // Step 5: Wait for eventual convergence through delta retransmission
+            
             println!("\nStep 5/6: Waiting for eventual convergence (15 seconds)");
             println!("→ Delta-based CRDTs should eventually retransmit missed deltas");
             println!("→ The system will detect and recover from delta loss");
             tokio::time::sleep(Duration::from_secs(15)).await;
             println!("✅ Wait complete");
 
-            // Step 6: Verify convergence despite message loss
+            
             println!("\nStep 6/6: Verifying convergence across all instances");
 
             let expected_final_value = (increment_value_1.parse::<i32>().unwrap()
@@ -196,7 +196,7 @@ mod delta_network_robustness {
 
             println!("→ Expected final counter value: {}", expected_final_value);
 
-            // Check if all instances have converged
+            
             let mut all_converged = true;
             let mut final_states = HashMap::new();
 
@@ -236,7 +236,7 @@ mod delta_network_robustness {
                 }
             }
 
-            // Compare initial and final states to show convergence progress
+            
             println!("\nConvergence comparison:");
             for instance_id in &instance_ids {
                 let unknown = "unknown".to_string();
@@ -275,8 +275,8 @@ mod delta_network_robustness {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "delta",     // Using delta-based synchronization
-                "immediate", // Not using causal delivery to allow reordering
+                "delta",     
+                "immediate", 
                 None,
                 None,
             );
@@ -290,7 +290,7 @@ mod delta_network_robustness {
             }
             println!("✅ Environment setup complete");
 
-            // Get instance info for testing
+            
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
             let source_instance = &instance_ids[0];
             let target_instance = &instance_ids[1];
@@ -304,19 +304,19 @@ mod delta_network_robustness {
             println!("→ We will simulate out-of-order delta delivery");
             println!("→ In a delta-based CRDT, each operation generates a delta representing only the change");
 
-            // Prepare operations for reordering
+            
             println!("\nStep 3/7: Preparing operation sequence");
             let operations = vec![
-                ("5".to_string(), 1), // First operation with value 5
-                ("3".to_string(), 2), // Second operation with value 3
-                ("7".to_string(), 3), // Third operation with value 7
+                ("5".to_string(), 1), 
+                ("3".to_string(), 2), 
+                ("7".to_string(), 3), 
             ];
             println!("→ Operation sequence: increment by 5, then 3, then 7");
 
             println!("\nStep 4/7: Sending operations to source instance in reverse order");
             println!("→ This will generate deltas that will be delivered out of order");
 
-            // Send operations in reverse order to simulate reordering
+            
             for (value, seq) in operations.iter().rev() {
                 println!("→ Sending operation {} of 3: increment by {}", seq, value);
 
@@ -341,13 +341,13 @@ mod delta_network_robustness {
                     return false;
                 }
 
-                // Add a delay between operations to ensure distinct deltas
+                
                 tokio::time::sleep(Duration::from_millis(300)).await;
             }
 
             println!("✅ All operations sent in reverse order, generating reordered deltas");
 
-            // Step 5: Check source state
+            
             println!("\nStep 5/7: Verifying source instance state");
 
             match get_state_from_instance(
@@ -385,14 +385,14 @@ mod delta_network_robustness {
                 }
             }
 
-            // Step 6: Wait for deltas to propagate
+            
             println!("\nStep 6/7: Waiting for deltas to propagate to target instance (10 seconds)");
             println!("→ Delta-based CRDTs should handle reordered deltas correctly");
             println!("→ Deltas contain enough context to be merged in any order");
             tokio::time::sleep(Duration::from_secs(10)).await;
             println!("✅ Wait complete");
 
-            // Step 7: Verify target state
+            
             println!("\nStep 7/7: Verifying target instance state after reordered delta delivery");
 
             let expected_final_value = operations
@@ -434,11 +434,11 @@ mod delta_network_robustness {
                 }
             }
 
-            // Check all instances for completeness
+            
             println!("\nVerifying all other instances in the system:");
             for instance_id in &instance_ids {
                 if instance_id == source_instance || instance_id == target_instance {
-                    continue; // Already checked
+                    continue; 
                 }
 
                 let service_url = service_urls.get(instance_id).unwrap();
@@ -493,7 +493,7 @@ mod delta_network_robustness {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "delta", // Using delta-based synchronization
+                "delta", 
                 "immediate",
                 None,
                 None,
@@ -508,7 +508,7 @@ mod delta_network_robustness {
             }
             println!("✅ Environment setup complete");
 
-            // Get instance info for testing
+            
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
             let instance_1 = &instance_ids[0];
             let instance_2 = &instance_ids[1];
@@ -527,11 +527,11 @@ mod delta_network_robustness {
             println!("→ Partition B: Instance {}", instance_3);
             println!("→ Deltas will not propagate across partition boundaries");
 
-            // Here we would normally set up network policies to create the partition,
-            // but for testing purposes we're simulating the partition conceptually
+            
+            
 
             println!("\nStep 3/8: Applying operations to Partition A");
-            // Apply operations to first partition
+            
             let increment_value_1 = "5";
             println!(
                 "→ Sending increment {} to instance {}",
@@ -581,7 +581,7 @@ mod delta_network_robustness {
             }
 
             println!("\nStep 4/8: Applying operation to Partition B");
-            // Apply operation to second partition
+            
             let increment_value_3 = "7";
             println!(
                 "→ Sending increment {} to instance {}",
@@ -606,13 +606,13 @@ mod delta_network_robustness {
                 return false;
             }
 
-            // Step 5: Allow time for deltas to propagate within partitions
+            
             println!("\nStep 5/8: Allowing deltas to propagate within each partition (5 seconds)");
             println!("→ Each operation creates a delta that should propagate within its partition");
             println!("→ But deltas should not cross partition boundaries");
             tokio::time::sleep(Duration::from_secs(5)).await;
 
-            // Expected values for each partition
+            
             let partition_a_expected = (increment_value_1.parse::<i32>().unwrap()
                 + increment_value_2.parse::<i32>().unwrap())
             .to_string();
@@ -622,11 +622,11 @@ mod delta_network_robustness {
             println!("→ Expected value in Partition A: {}", partition_a_expected);
             println!("→ Expected value in Partition B: {}", partition_b_expected);
 
-            // Check states within partitions
+            
             println!("\nStep 6/8: Verifying partition state consistency");
             let mut partition_a_consistent = true;
 
-            // Check instance 1
+            
             match get_state_from_instance(instance_1, &test_config.crdt_type, &service_url_1).await
             {
                 Ok(state) => {
@@ -651,7 +651,7 @@ mod delta_network_robustness {
                 }
             }
 
-            // Check instance 2
+            
             match get_state_from_instance(instance_2, &test_config.crdt_type, &service_url_2).await
             {
                 Ok(state) => {
@@ -676,7 +676,7 @@ mod delta_network_robustness {
                 }
             }
 
-            // Check instance 3
+            
             let mut partition_b_consistent = true;
             match get_state_from_instance(instance_3, &test_config.crdt_type, &service_url_3).await
             {
@@ -714,7 +714,7 @@ mod delta_network_robustness {
                 println!("❌ Partition B has inconsistencies");
             }
 
-            // Verify partitions are still diverged
+            
             if partition_a_expected == partition_b_expected {
                 println!("⚠️ Both partitions have the same value - partition simulation might not be effective");
             } else {
@@ -727,8 +727,8 @@ mod delta_network_robustness {
             println!("→ Re-enabling delta propagation between all instances");
             println!("→ In a delta-based system, accumulated deltas should now be exchanged");
 
-            // In a real scenario, we would remove the network policies
-            // Here we just announce that the partition is conceptually healed
+            
+            
 
             println!("\nWaiting for delta exchange after partition healing (15 seconds)");
             println!("→ Delta-based CRDTs should exchange accumulated changes after healing");
@@ -747,7 +747,7 @@ mod delta_network_robustness {
                 expected_final_value
             );
 
-            // Check if all instances have converged
+            
             let mut all_converged = true;
 
             for instance_id in &instance_ids {

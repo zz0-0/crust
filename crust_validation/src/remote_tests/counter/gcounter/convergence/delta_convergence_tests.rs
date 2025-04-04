@@ -26,7 +26,7 @@ mod delta_convergence {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "delta", // Using delta-based synchronization
+                "delta", 
                 "immediate",
                 None,
                 None,
@@ -188,7 +188,7 @@ mod delta_convergence {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "delta", // Using delta-based synchronization
+                "delta", 
                 "immediate",
                 None,
                 None,
@@ -236,7 +236,7 @@ mod delta_convergence {
             }
             println!("✅ First operation sent successfully");
 
-            // Short delay for operation to be processed locally and delta to be generated
+            
             tokio::time::sleep(Duration::from_millis(500)).await;
 
             println!("\nStep 3/6: Verifying local state of first instance");
@@ -260,7 +260,7 @@ mod delta_convergence {
                     }
                 };
 
-            // Check instance 2 to see if it's received the delta yet
+            
             println!(
                 "→ Checking if instance {} has received the delta yet",
                 instance_2
@@ -315,7 +315,7 @@ mod delta_convergence {
             }
             println!("✅ Second operation sent successfully");
 
-            // Check local state of instance 2 after its own operation
+            
             println!(
                 "→ Checking local state of instance {} after applying its operation",
                 instance_2
@@ -328,8 +328,8 @@ mod delta_convergence {
                         let counter_value = state.get_state();
                         println!("✅ State retrieved: {:?}", counter_value);
 
-                        // This should reflect only the local operation
-                        // if the first delta hasn't been delivered yet
+                        
+                        
                         let value = counter_value["value"].as_str().unwrap_or("0");
                         if value == increment_value_2 {
                             println!(

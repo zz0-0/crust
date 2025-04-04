@@ -369,7 +369,7 @@ where
         let timestamp_system_time = UNIX_EPOCH + Duration::from_secs(timestamp_seconds as u64);
         SystemTime::now()
             .duration_since(timestamp_system_time)
-            .unwrap_or(Duration::ZERO) // Handle potential errors
+            .unwrap_or(Duration::ZERO) 
     }
 
     #[cfg(feature = "batch")]
@@ -388,7 +388,7 @@ where
                         return None;
                     }
                 } else {
-                    config.last_batch_check_timestamp = Some(self.get_unix_timestamp_seconds()); // Initialize if None
+                    config.last_batch_check_timestamp = Some(self.get_unix_timestamp_seconds()); 
                     return None;
                 }
             }
@@ -450,7 +450,7 @@ where
                         return None;
                     }
                 } else {
-                    config.last_batch_check_timestamp = Some(self.get_unix_timestamp_seconds()); // Initialize if None
+                    config.last_batch_check_timestamp = Some(self.get_unix_timestamp_seconds()); 
                     return None;
                 }
             }

@@ -22,12 +22,12 @@ mod operation_casual_consistency {
             let client = kube::Client::try_default().await.unwrap();
             let namespace = "default";
             let deployment_name = "crust-network";
-            let replicas = 2; // Simple dependency only needs 2 replicas
+            let replicas = 2; 
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "operation", // Using operation-based synchronization
-                "immediate", // Using immediate sync mode
+                "operation", 
+                "immediate", 
                 None,
                 None,
             );
@@ -41,7 +41,7 @@ mod operation_casual_consistency {
             }
             println!("✅ Environment setup complete");
 
-            // Get instances for testing
+            
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
             let instance_1 = &instance_ids[0];
             let instance_2 = &instance_ids[1];
@@ -53,7 +53,7 @@ mod operation_casual_consistency {
                 instance_1, instance_2
             );
 
-            // Step 2: First operation (causally preceding)
+            
             println!(
                 "\nStep 2/5: Applying first operation on instance {}",
                 instance_1
@@ -79,12 +79,12 @@ mod operation_casual_consistency {
             }
             println!("✅ First operation applied successfully");
 
-            // Step 3: Wait for first operation to propagate
+            
             println!(
                 "\nStep 3/5: Verifying first operation propagated to instance {}",
                 instance_2
             );
-            // Loop to check for propagation with timeout
+            
             let mut propagated = false;
             for i in 1..=10 {
                 println!("→ Attempt #{}: Checking if operation propagated...", i);
@@ -100,7 +100,7 @@ mod operation_casual_consistency {
                             instance_2, counter_value
                         );
 
-                        // Check if value is present in counter
+                        
                         if let Some(value) = counter_value.get("counter") {
                             if value == increment_value_1 {
                                 println!(
@@ -126,7 +126,7 @@ mod operation_casual_consistency {
                 return false;
             }
 
-            // Step 4: Second causally dependent operation
+            
             println!(
                 "\nStep 4/5: Applying causally dependent operation on instance {}",
                 instance_2
@@ -152,7 +152,7 @@ mod operation_casual_consistency {
             }
             println!("✅ Causally dependent operation applied successfully");
 
-            // Step 5: Verify final state
+            
             println!("\nStep 5/5: Verifying final converged state on both instances");
             tokio::time::sleep(Duration::from_secs(2)).await;
 
@@ -213,12 +213,12 @@ mod operation_casual_consistency {
             let client = kube::Client::try_default().await.unwrap();
             let namespace = "default";
             let deployment_name = "crust-network";
-            let replicas = 3; // Need 3 replicas for complex dependency chain
+            let replicas = 3; 
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "operation", // Using operation-based synchronization
-                "immediate", // Using immediate sync mode
+                "operation", 
+                "immediate", 
                 None,
                 None,
             );
@@ -232,7 +232,7 @@ mod operation_casual_consistency {
             }
             println!("✅ Environment setup complete");
 
-            // Get instances for testing
+            
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
             let instance_1 = &instance_ids[0];
             let instance_2 = &instance_ids[1];
@@ -246,7 +246,7 @@ mod operation_casual_consistency {
                 instance_1, instance_2, instance_3
             );
 
-            // Step 2: First operation in causal chain
+            
             println!(
                 "\nStep 2/7: Starting causal chain with operation on instance {}",
                 instance_1
@@ -272,7 +272,7 @@ mod operation_casual_consistency {
             }
             println!("✅ First operation in causal chain applied successfully");
 
-            // Step 3: Wait for first operation to propagate to instance 2
+            
             println!(
                 "\nStep 3/7: Verifying first operation propagated to instance {}",
                 instance_2
@@ -317,7 +317,7 @@ mod operation_casual_consistency {
                 return false;
             }
 
-            // Step 4: Second operation in causal chain from instance 2
+            
             println!(
                 "\nStep 4/7: Continuing causal chain with operation on instance {}",
                 instance_2
@@ -343,7 +343,7 @@ mod operation_casual_consistency {
             }
             println!("✅ Second operation in causal chain applied successfully");
 
-            // Step 5: Wait for second operation to propagate to instance 3
+            
             println!(
                 "\nStep 5/7: Verifying causal chain propagated to instance {}",
                 instance_3
@@ -392,7 +392,7 @@ mod operation_casual_consistency {
                 return false;
             }
 
-            // Step 6: Final operation in causal chain from instance 3
+            
             println!(
                 "\nStep 6/7: Completing causal chain with final operation on instance {}",
                 instance_3
@@ -418,7 +418,7 @@ mod operation_casual_consistency {
             }
             println!("✅ Final operation in causal chain applied successfully");
 
-            // Step 7: Verify final state across all instances
+            
             println!("\nStep 7/7: Verifying final converged state across all instances");
             tokio::time::sleep(Duration::from_secs(3)).await;
 
@@ -491,8 +491,8 @@ mod operation_casual_consistency {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "operation", // Using operation-based synchronization
-                "immediate", // Using immediate sync mode
+                "operation", 
+                "immediate", 
                 None,
                 None,
             );
@@ -506,7 +506,7 @@ mod operation_casual_consistency {
             }
             println!("✅ Environment setup complete");
 
-            // Get instances for testing
+            
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
             let instance_1 = &instance_ids[0];
             let instance_2 = &instance_ids[1];
@@ -520,7 +520,7 @@ mod operation_casual_consistency {
                 instance_1, instance_2, instance_3
             );
 
-            // Step 2: First establish a causal chain
+            
             println!("\nStep 2/6: Establishing initial causal chain");
             println!(
                 "→ Sending first operation (value 5) to instance {}",
@@ -546,7 +546,7 @@ mod operation_casual_consistency {
                 return false;
             }
 
-            // Wait for propagation to instance 2
+            
             println!(
                 "→ Waiting for first operation to propagate to instance {}",
                 instance_2
@@ -586,7 +586,7 @@ mod operation_casual_consistency {
                 return false;
             }
 
-            // Second operation in the causal chain
+            
             println!(
                 "→ Sending second operation (value 3) to instance {} (causally after first)",
                 instance_2
@@ -612,7 +612,7 @@ mod operation_casual_consistency {
             }
             println!("✅ Initial causal chain established");
 
-            // Step 3: Wait for propagation to all instances
+            
             println!("\nStep 3/6: Ensuring causal chain is propagated to all instances");
             tokio::time::sleep(Duration::from_secs(2)).await;
 
@@ -620,7 +620,7 @@ mod operation_casual_consistency {
                 + increment_value_2.parse::<i32>().unwrap())
             .to_string();
 
-            // Verify all instances have received the initial operations
+            
             let mut all_received_initial = true;
             for (instance_id, service_url) in &service_urls {
                 match get_state_from_instance(instance_id, &test_config.crdt_type, service_url)
@@ -657,11 +657,11 @@ mod operation_casual_consistency {
             }
             println!("✅ Causal chain propagated to all instances");
 
-            // Step 4: Apply concurrent operations that depend on the causal chain
+            
             println!("\nStep 4/6: Applying concurrent operations with causal dependency");
             println!("→ These operations depend on the initial causal chain but are concurrent to each other");
 
-            // Prepare concurrent operations
+            
             let concurrent_op_1 = CrdtInnerCommand::Counter(CounterInnerCommand::Increment {
                 value: "7".to_string(),
             });
@@ -669,7 +669,7 @@ mod operation_casual_consistency {
                 value: "2".to_string(),
             });
 
-            // Send concurrent operations
+            
             let handle_1 = tokio::spawn({
                 let instance_id = instance_1.clone();
                 let service_url = service_url_1.clone();
@@ -734,21 +734,21 @@ mod operation_casual_consistency {
 
             println!("✅ Concurrent operations sent successfully");
 
-            // Step 5: Wait for convergence
+            
             println!("\nStep 5/6: Waiting for system to converge with all operations (5 seconds)");
             println!(
                 "→ All instances should receive all operations, preserving causal dependencies"
             );
             tokio::time::sleep(Duration::from_secs(5)).await;
 
-            // Step 6: Verify final state
+            
             println!("\nStep 6/6: Verifying final state with causal ordering preserved");
             let final_expected_value = (
-                increment_value_1.parse::<i32>().unwrap() + // First operation (5)
-        increment_value_2.parse::<i32>().unwrap() + // Second operation (3)
-        7 + // Concurrent operation 1
+                increment_value_1.parse::<i32>().unwrap() + 
+        increment_value_2.parse::<i32>().unwrap() + 
+        7 + 
         2
-                // Concurrent operation 2
+                
             )
             .to_string();
 
@@ -816,8 +816,8 @@ mod operation_casual_consistency {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "operation", // Using operation-based synchronization
-                "immediate", // Using immediate sync mode
+                "operation", 
+                "immediate", 
                 None,
                 None,
             );
@@ -831,7 +831,7 @@ mod operation_casual_consistency {
             }
             println!("✅ Environment setup complete");
 
-            // Get instances for testing
+            
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
             let instance_1 = &instance_ids[0];
             let instance_2 = &instance_ids[1];
@@ -845,10 +845,10 @@ mod operation_casual_consistency {
                 instance_1, instance_2, instance_3
             );
 
-            // Step 2: Apply operations with causal dependencies
+            
             println!("\nStep 2/7: Creating causal dependency chain with deliberate delays");
 
-            // First operation
+            
             let increment_value_1 = "5";
             println!(
                 "→ Sending operation 1 (value {}) to instance {}",
@@ -874,13 +874,13 @@ mod operation_casual_consistency {
             }
             println!("✅ First operation sent successfully");
 
-            // Step 3: Introduce delay between operations (simulating network delay)
+            
             println!("\nStep 3/7: Introducing deliberate delay between operations (3 seconds)");
             println!("→ In a causally consistent system, delayed operations should still be ordered correctly");
             tokio::time::sleep(Duration::from_secs(3)).await;
             println!("✅ Delay complete");
 
-            // Second operation (causally dependent on first)
+            
             println!(
                 "\nStep 4/7: Sending second operation in causal chain to instance {}",
                 instance_2
@@ -910,13 +910,13 @@ mod operation_casual_consistency {
             }
             println!("✅ Second operation sent successfully");
 
-            // Step 5: Check intermediate state
+            
             println!("\nStep 5/7: Checking intermediate state to verify causal ordering");
 
-            // Check instance 3 which should eventually receive both operations
+            
             println!("→ Checking intermediate state at instance {}", instance_3);
 
-            // Allow brief time for propagation to start
+            
             tokio::time::sleep(Duration::from_secs(1)).await;
 
             match get_state_from_instance(instance_3, &test_config.crdt_type, &service_url_3).await
@@ -929,8 +929,8 @@ mod operation_casual_consistency {
                         instance_3, actual_value
                     );
 
-                    // We don't assert exact values here because propagation timing is unpredictable
-                    // The test is primarily concerned with final convergence
+                    
+                    
                     if actual_value != "0" {
                         println!(
                             "→ Operations are beginning to propagate to instance {}",
@@ -945,7 +945,7 @@ mod operation_casual_consistency {
                 }
             }
 
-            // Third operation (completes causal chain)
+            
             println!(
                 "\nStep 6/7: Sending final operation to instance {}",
                 instance_3
@@ -975,7 +975,7 @@ mod operation_casual_consistency {
             }
             println!("✅ Third operation sent successfully");
 
-            // Step 7: Wait for eventual convergence and verify final state
+            
             println!("\nStep 7/7: Waiting for convergence and verifying final state");
             println!("→ With causal consistency, all operations should eventually be applied in causal order");
             println!("→ Allowing time for delayed operations to propagate (10 seconds)...");

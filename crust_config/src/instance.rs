@@ -143,9 +143,7 @@ pub async fn setup_remote_test_environement(config: &DeploymentConfig) -> HashMa
             .arg("service")
             .arg(service_name)
             .arg("-o")
-            .arg("jsonpath='{.spec.clusterIP}:{.spec.ports[0].port}'") // For ClusterIP
-            // For LoadBalancer (External IP might take time, needs more robust discovery)
-            // .arg("jsonpath='{.status.loadBalancer.ingress[0].hostname}:{.spec.ports[0].port}'")
+            .arg("jsonpath='{.spec.clusterIP}:{.spec.ports[0].port}'")
             .output()
             .expect("Failed to execute kubectl get service");
         if !kubectl_get_service_output.status.success() {
@@ -186,7 +184,7 @@ pub async fn send_command_to_instance(
 ) -> Result<StatusCode, String> {
     let client = Client::new();
     let url = format!(
-        "{}/internal/receive/{}/{}/{}", // Correct URL for internal receive endpoint
+        "{}/internal/receive/{}/{}/{}",
         service_base_url, crdt_type_str, sync_type_str, sync_mode_str
     );
 
@@ -201,7 +199,7 @@ pub async fn send_command_to_instance(
                     "HTTP request failed with status: {}, Response Body: {:?}",
                     response.status(),
                     response.text().await
-                )) // Include response body in error
+                ))
             }
         }
         Err(e) => Err(format!("Error sending HTTP request: {}", e)),
@@ -227,7 +225,7 @@ pub async fn send_command_to_instance_with_loss(
 
     let client = Client::new();
     let url = format!(
-        "{}/internal/receive/{}/{}/{}", // Correct URL for internal receive endpoint
+        "{}/internal/receive/{}/{}/{}",
         service_base_url, crdt_type_str, sync_type_str, sync_mode_str
     );
 
@@ -242,7 +240,7 @@ pub async fn send_command_to_instance_with_loss(
                     "HTTP request failed with status: {}, Response Body: {:?}",
                     response.status(),
                     response.text().await
-                )) // Include response body in error
+                ))
             }
         }
         Err(e) => Err(format!("Error sending HTTP request: {}", e)),
@@ -272,7 +270,7 @@ pub async fn get_state_from_instance(
                     "HTTP request failed with status: {}, Response Body: {:?}",
                     response.status(),
                     response.text().await
-                )) // Include response body in error
+                ))
             }
         }
         Err(e) => Err(format!("Error sending HTTP request: {}", e)),

@@ -26,8 +26,8 @@ mod operation_convergence {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "operation", // Using operation-based synchronization
-                "immediate", // With causal delivery
+                "operation", 
+                "immediate", 
                 None,
                 None,
             );
@@ -192,8 +192,8 @@ mod operation_convergence {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "operation", // Using operation-based synchronization
-                "immediate", // With causal delivery
+                "operation", 
+                "immediate", 
                 None,
                 None,
             );
@@ -240,7 +240,7 @@ mod operation_convergence {
             }
             println!("✅ First operation sent successfully");
 
-            // Short delay for operation to be processed locally
+            
             tokio::time::sleep(Duration::from_millis(500)).await;
 
             println!("\nStep 3/6: Verifying local state of first instance");
@@ -264,7 +264,7 @@ mod operation_convergence {
                     }
                 };
 
-            // Check instance 2 to see if it's received the operation yet (may or may not have)
+            
             println!(
                 "→ Checking if instance {} has received the operation yet",
                 instance_2
@@ -322,7 +322,7 @@ mod operation_convergence {
             }
             println!("✅ Second operation sent successfully");
 
-            // Check local state of instance 2 after its own operation
+            
             println!(
                 "→ Checking local state of instance {} after applying its operation",
                 instance_2
@@ -335,8 +335,8 @@ mod operation_convergence {
                         let counter_value = state.get_state();
                         println!("✅ State retrieved: {:?}", counter_value);
 
-                        // For operation-based, this should reflect only the local operation
-                        // if the first operation hasn't been delivered yet
+                        
+                        
                         let value = counter_value["value"].as_str().unwrap_or("0");
                         if value == increment_value_2 {
                             println!(
@@ -445,8 +445,8 @@ mod operation_convergence {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "operation", // Using operation-based synchronization
-                "immediate", // With causal delivery
+                "operation", 
+                "immediate", 
                 None,
                 None,
             );
@@ -461,10 +461,10 @@ mod operation_convergence {
             println!("✅ Environment setup complete");
 
             println!("\nStep 2/6: Preparing high-load test operations");
-            let num_operations = 50; // High load with 50 operations
+            let num_operations = 50; 
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
 
-            // Create sequential increment values to make validation simpler
+            
             let mut total_expected = 0;
             let mut operations = Vec::with_capacity(num_operations);
             for i in 1..=num_operations {
@@ -481,7 +481,7 @@ mod operation_convergence {
             let mut handles = Vec::new();
 
             for (i, (value, _)) in operations.iter().enumerate() {
-                // Round-robin distribution across instances
+                
                 let target_idx = i % instance_ids.len();
                 let instance_id = &instance_ids[target_idx];
                 let service_url = service_urls.get(instance_id).unwrap().clone();
@@ -489,7 +489,7 @@ mod operation_convergence {
                 let instance_id_clone = instance_id.clone();
                 let value_clone = value.clone();
 
-                // Create a task for each operation
+                
                 handles.push(tokio::spawn(async move {
                     println!(
                         "→ Sending increment {} to instance {}",

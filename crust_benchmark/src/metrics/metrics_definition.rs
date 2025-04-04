@@ -1,56 +1,56 @@
-// pub enum MetricType {
-//     Latency,
-//     Throughput,
-//     CpuUsage,
-//     MemoryUsage,
-//     ErrorRate,
-//     ConvergenceTime,
-//     Size,
-//     Duration,
-// }
 
-// pub enum MetricCategory {
-//     Performance,
-//     Consistency,
-//     Resource,
-//     Error,
-// }
 
-// pub enum MetricAggregation {
-//     Average,
-//     P50,
-//     P90,
-//     P99,
-//     Min,
-//     Max,
-//     Total,
-//     Value,
-// }
 
-// pub enum MetricDataType {
-//     Numeric,
-//     TimeDuration,
-//     Percentage,
-//     Integer,
-//     Text,
-// }
 
-// pub struct Metric {
-//     pub metric_type: MetricType,
-//     pub category: MetricCategory,
-//     pub aggregation: Vec<MetricAggregation>,
-//     pub data_type: MetricDataType,
-// }
 
-// pub struct Metrics {
-//     pub metrics: Vec<Metric>,
-// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 use std::time::Instant;
 
 #[derive(Clone, Debug)]
 pub enum MetricType {
-    // inner command
+    
     CommandExecutionTime,
     CommandSize,
     CommandRate,
@@ -95,11 +95,13 @@ pub enum MetricAggregation {
     Count,
 }
 
+#[derive(Clone)]
 pub struct MetricValue {
     pub value: f64,
     pub timestamp: Instant,
 }
 
+#[derive(Clone)]
 pub struct Metric {
     pub metric_type: MetricType,
     pub values: Vec<MetricValue>,

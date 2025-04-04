@@ -128,7 +128,7 @@ where
 {
     let mut crdt = state.get_or_create_crdt_type(crdt_type.clone());
 
-    // let sync_type = SyncType::new(sync_type);
+    
 
     let test_config = DeploymentConfig::new(
         3,
@@ -147,17 +147,17 @@ where
         get_replica_pod_names().await.unwrap(),
     );
 
-    // let sync_mode = SyncMode::new(sync_mode);
+    
 
     let mut sync_config = SyncConfig {
         sync_type: SyncType::new(sync_type),
         sync_mode: SyncMode::new(sync_mode),
         #[cfg(feature = "batch")]
-        batch_times: Some(3), // Example for BatchCountBased
+        batch_times: Some(3), 
         #[cfg(feature = "batch")]
-        batching_interval: Some(Duration::from_secs(5)), // Example for BatchTimeBased
+        batching_interval: Some(Duration::from_secs(5)), 
         #[cfg(feature = "batch")]
-        last_batch_check_timestamp: None, // Example for BatchTimeBased
+        last_batch_check_timestamp: None, 
     };
 
     let message_option = handle_sync_message(
@@ -177,7 +177,7 @@ where
     } else {
         (
             StatusCode::OK,
-            Json(json!({"message":"No operation to sync"})), // Or a more appropriate message
+            Json(json!({"message":"No operation to sync"})), 
         )
     }
 }

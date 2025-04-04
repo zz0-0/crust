@@ -27,7 +27,7 @@ mod operation_network_robustness {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "operation", // Using operation-based synchronization
+                "operation",
                 "immediate",
                 None,
                 None,
@@ -42,7 +42,6 @@ mod operation_network_robustness {
             }
             println!("✅ Environment setup complete");
 
-            // Get instance info for testing
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
             let instance_1 = &instance_ids[0];
             let instance_2 = &instance_ids[1];
@@ -57,7 +56,7 @@ mod operation_network_robustness {
             );
 
             println!("\nStep 2/6: Configuring message loss simulation");
-            // Simulate substantial message loss (50%)
+
             let message_loss_rate = 0.5;
             println!(
                 "→ Setting message loss rate to {}%",
@@ -66,7 +65,6 @@ mod operation_network_robustness {
 
             println!("\nStep 3/6: Sending operations with simulated message loss");
 
-            // Send operation to first instance with message loss
             let increment_value_1 = "7";
             println!(
                 "→ Sending increment {} to instance {} with {}% message loss",
@@ -94,7 +92,6 @@ mod operation_network_robustness {
                 return false;
             }
 
-            // Send operation to second instance with message loss
             let increment_value_2 = "3";
             println!(
                 "→ Sending increment {} to instance {} with {}% message loss",
@@ -122,7 +119,6 @@ mod operation_network_robustness {
                 return false;
             }
 
-            // Send operation to third instance with message loss
             let increment_value_3 = "5";
             println!(
                 "→ Sending increment {} to instance {} with {}% message loss",
@@ -152,7 +148,6 @@ mod operation_network_robustness {
 
             println!("✅ All operations sent with simulated message loss");
 
-            // Step 4: Check immediate states (will likely be inconsistent)
             println!(
                 "\nStep 4/6: Checking immediate states (expect inconsistency due to message loss)"
             );
@@ -178,14 +173,12 @@ mod operation_network_robustness {
                 }
             }
 
-            // Step 5: Wait for eventual convergence through operation propagation and retries
             println!("\nStep 5/6: Waiting for eventual convergence (20 seconds)");
             println!("→ In operation-based CRDTs, the system must detect and recover from lost operations");
             println!("→ This tests whether the operation-based system has proper retry mechanisms");
             tokio::time::sleep(Duration::from_secs(20)).await;
             println!("✅ Wait complete");
 
-            // Step 6: Verify convergence despite message loss
             println!("\nStep 6/6: Verifying convergence across all instances");
 
             let expected_final_value = (increment_value_1.parse::<i32>().unwrap()
@@ -195,7 +188,6 @@ mod operation_network_robustness {
 
             println!("→ Expected final counter value: {}", expected_final_value);
 
-            // Check if all instances have converged
             let mut all_converged = true;
             let mut final_states = HashMap::new();
 
@@ -235,7 +227,6 @@ mod operation_network_robustness {
                 }
             }
 
-            // Compare initial and final states to show convergence progress
             println!("\nConvergence comparison:");
             for instance_id in &instance_ids {
                 let unknown_value = "unknown".to_string();
@@ -277,8 +268,8 @@ mod operation_network_robustness {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "operation", // Using operation-based synchronization
-                "immediate", // Not using causal delivery to test reordering
+                "operation",
+                "immediate",
                 None,
                 None,
             );
@@ -292,7 +283,6 @@ mod operation_network_robustness {
             }
             println!("✅ Environment setup complete");
 
-            // Get instance info for testing
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
             let source_instance = &instance_ids[0];
             let target_instance = &instance_ids[1];
@@ -306,19 +296,17 @@ mod operation_network_robustness {
             println!("→ We will manually simulate out-of-order message delivery");
             println!("→ Later operations will be delivered before earlier ones");
 
-            // Prepare operations for reordering
             println!("\nStep 3/7: Preparing operation sequence");
             let operations = vec![
-                ("5".to_string(), 1), // First operation with value 5
-                ("3".to_string(), 2), // Second operation with value 3
-                ("7".to_string(), 3), // Third operation with value 7
+                ("5".to_string(), 1),
+                ("3".to_string(), 2),
+                ("7".to_string(), 3),
             ];
             println!("→ Operation sequence: increment by 5, then 3, then 7");
 
             println!("\nStep 4/7: Sending operations to source instance in reverse order");
             println!("→ This simulates out-of-order message delivery");
 
-            // Send operations in reverse order
             for (value, seq) in operations.iter().rev() {
                 println!("→ Sending operation {} of 3: increment by {}", seq, value);
 
@@ -343,13 +331,11 @@ mod operation_network_robustness {
                     return false;
                 }
 
-                // Add a small delay between operations
                 tokio::time::sleep(Duration::from_millis(300)).await;
             }
 
             println!("✅ All operations sent in reverse order");
 
-            // Step 5: Check source state
             println!("\nStep 5/7: Verifying source instance state");
 
             match get_state_from_instance(
@@ -386,7 +372,6 @@ mod operation_network_robustness {
                 }
             }
 
-            // Step 6: Wait for operations to propagate
             println!(
                 "\nStep 6/7: Waiting for operations to propagate to target instance (10 seconds)"
             );
@@ -394,7 +379,6 @@ mod operation_network_robustness {
             tokio::time::sleep(Duration::from_secs(10)).await;
             println!("✅ Wait complete");
 
-            // Step 7: Verify target state
             println!("\nStep 7/7: Verifying target instance state");
 
             let expected_final_value = operations
@@ -473,7 +457,7 @@ mod operation_network_robustness {
             let test_config = DeploymentConfig::new(
                 replicas.try_into().unwrap(),
                 "gcounter",
-                "operation", // Using operation-based synchronization
+                "operation",
                 "immediate",
                 None,
                 None,
@@ -488,7 +472,6 @@ mod operation_network_robustness {
             }
             println!("✅ Environment setup complete");
 
-            // Get instance info for testing
             let instance_ids = service_urls.keys().cloned().collect::<Vec<String>>();
             let instance_1 = &instance_ids[0];
             let instance_2 = &instance_ids[1];
@@ -507,11 +490,8 @@ mod operation_network_robustness {
             println!("→ Partition B: Instance {}", instance_3);
             println!("→ Operations will not propagate across partition boundaries");
 
-            // Here we would normally set up network policies to create the partition,
-            // but for testing purposes, we'll simulate the partition conceptually
-
             println!("\nStep 3/8: Applying operations to Partition A");
-            // Apply operations to first partition
+
             let increment_value_1 = "5";
             println!(
                 "→ Sending increment {} to instance {}",
@@ -561,7 +541,7 @@ mod operation_network_robustness {
             }
 
             println!("\nStep 4/8: Applying operation to Partition B");
-            // Apply operation to second partition
+
             let increment_value_3 = "7";
             println!(
                 "→ Sending increment {} to instance {}",
@@ -586,14 +566,12 @@ mod operation_network_robustness {
                 return false;
             }
 
-            // Step 5: Allow time for operations to propagate within partitions
             println!(
                 "\nStep 5/8: Allowing operations to propagate within each partition (5 seconds)"
             );
             println!("→ Operations should propagate within partitions but not across partitions");
             tokio::time::sleep(Duration::from_secs(5)).await;
 
-            // Expected values for each partition
             let partition_a_expected = (increment_value_1.parse::<i32>().unwrap()
                 + increment_value_2.parse::<i32>().unwrap())
             .to_string();
@@ -603,11 +581,9 @@ mod operation_network_robustness {
             println!("→ Expected value in Partition A: {}", partition_a_expected);
             println!("→ Expected value in Partition B: {}", partition_b_expected);
 
-            // Check states within partitions
             println!("\nStep 6/8: Verifying partition state consistency");
             let mut partition_a_consistent = true;
 
-            // Check instance 1
             match get_state_from_instance(instance_1, &test_config.crdt_type, &service_url_1).await
             {
                 Ok(state) => {
@@ -632,7 +608,6 @@ mod operation_network_robustness {
                 }
             }
 
-            // Check instance 2
             match get_state_from_instance(instance_2, &test_config.crdt_type, &service_url_2).await
             {
                 Ok(state) => {
@@ -657,7 +632,6 @@ mod operation_network_robustness {
                 }
             }
 
-            // Check instance 3
             let mut partition_b_consistent = true;
             match get_state_from_instance(instance_3, &test_config.crdt_type, &service_url_3).await
             {
@@ -695,7 +669,6 @@ mod operation_network_robustness {
                 println!("❌ Partition B has inconsistencies");
             }
 
-            // Verify partitions are still diverged
             if partition_a_expected == partition_b_expected {
                 println!("⚠️ Both partitions have the same value - partition simulation might not be effective");
             } else {
@@ -707,9 +680,6 @@ mod operation_network_robustness {
             println!("\nStep 7/8: Healing the network partition");
             println!("→ Re-enabling operation propagation between all instances");
             println!("→ In an operation-based system, missed operations must now be exchanged");
-
-            // In a real scenario, we would remove the network policies
-            // Here we just announce that the partition is conceptually healed
 
             println!("\nWaiting for operation exchange after partition healing (15 seconds)");
             println!("→ Operation-based CRDTs need to exchange missed operations after healing");
@@ -727,7 +697,6 @@ mod operation_network_robustness {
                 expected_final_value
             );
 
-            // Check if all instances have converged
             let mut all_converged = true;
 
             for instance_id in &instance_ids {

@@ -1,6 +1,9 @@
 use std::time::Instant;
 
-use crust_core::r#type::{CrdtType, CrdtTypeVariant};
+use crust_core::{
+    command::{CounterInnerCommand, CrdtInnerCommand},
+    r#type::{CrdtType, CrdtTypeVariant},
+};
 
 use crate::{
     collector::metrics_collector::{BenchmarkMetricsCollector, MetricsCollector},
@@ -26,75 +29,82 @@ pub struct BenchmarkRunner {
 }
 
 impl BenchmarkRunner {
-    // pub fn new(config: BenchmarkConfig) -> Self {
-    //     let metrics_collector = BenchmarkMetricsCollector::with_default_metrics(config.sync_type);
-    //     let reporter = BenchmarkReporter::new();
+    pub fn new(config: BenchmarkConfig) -> Self {
+        let metrics_collector = BenchmarkMetricsCollector::new(crust_core::sync::SyncType::State);
+        let reporter = BenchmarkReporter::new(config.clone(), metrics_collector.clone());
 
-    //     BenchmarkRunner {
-    //         config,
-    //         metrics_collector,
-    //         reporter,
-    //         replicas: Vec::new(),
-    //         start_time: None,
-    //     }
-    // }
+        Self {
+            config,
+            metrics_collector,
+            reporter,
+            replicas: Vec::new(),
+            start_time: None,
+        }
+    }
 
-    // pub fn setup_environment(&mut self) -> Result<(), BenchmarkError> {
-    //     // Setup environment
-    //     for _ in 0..self.config.replica_count {
-    //         let crdt = match self.config.crdt_type.variant {
-    //             CrdtTypeVariant::GCounter(_) => CrdtType::<String>::new("gcounter".to_string()),
-    //         };
-    //         self.replicas.push(crdt.unwrap());
-    //     }
+    pub fn setup(&mut self) -> Result<(), BenchmarkError> {
+        for _ in 0..self.config.replica_count {
+            let replica = CrdtType::new("GCounter".to_string()).unwrap();
+            self.replicas.push(replica);
+        }
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
-    // pub fn execute_workload(&mut self) -> Result<(), BenchmarkError> {
-    //     let workload = generate_workload(self.config.crdt_type, self.config.command_count);
+    pub fn run(&mut self) -> Result<(), BenchmarkError> {
+        self.start_time = Some(Instant::now());
 
-    //     self.start_time = Some(Instant::now());
+        let workload = generate_workload(
+            CrdtType::new("GCounter".to_string()).unwrap(),
+            self.config.command_count,
+        );
 
-    //     for (i, command) in workload.iter().enumerate() {
-    //         let replica = &mut self.replicas[i % self.replicas.len()];
+        for operation in workload {
+            match operation {
+                CrdtInnerCommand::Counter(cmd) => {
+                    for replica in &mut self.replicas {
+                        match cmd {
+                            CounterInnerCommand::Increment { ref value } => {
+                                replica.apply_command(&CrdtInnerCommand::Counter(
+                                    CounterInnerCommand::Increment {
+                                        value: value.to_string(),
+                                    },
+                                ));
+                            }
+                            CounterInnerCommand::Decrement { ref value } => {
+                                replica.apply_command(&CrdtInnerCommand::Counter(
+                                    CounterInnerCommand::Decrement {
+                                        value: value.to_string(),
+                                    },
+                                ));
+                            }
+                        }
+                    }
+                }
+                CrdtInnerCommand::Graph(graph_inner_command) => todo!(),
+                CrdtInnerCommand::Set(set_inner_command) => todo!(),
+                CrdtInnerCommand::Text(text_inner_command) => todo!(),
+            }
+        }
 
-    //         self.metrics_collector.start_timing();
+        self.metrics_collector.get_metrics();
 
-    //         if let Some(command) = replica.apply_command(&command) {
-    //             self.metrics_collector
-    //                 .stop_timing(MetricType::CommandExecutionTime);
-    //         }
-    //     }
+        Ok(())
+    }
 
-    //     Ok(())
-    // }
+    pub fn report(&mut self) -> Result<(), BenchmarkError> {
+        if let Some(start_time) = self.start_time {
+            let duration = start_time.elapsed();
+            let results = BenchmarkResults {
+                name: "GCounter".to_string(),
+                crdt_type: CrdtType::new("GCounter".to_string()).unwrap(),
+                duration,
+            };
+            self.reporter.add_result(results);
+        }
 
-    // pub fn collect_results(&mut self) -> Result<Vec<BenchmarkResults>, BenchmarkError> {
-    //     let mut results = Vec::new();
+        self.reporter.report();
 
-    //     let duration = if let Some(start_time) = self.start_time {
-    //         start_time.elapsed()
-    //     } else {
-    //         return Err(BenchmarkError::MetricsError);
-    //     };
-
-    //     let result = BenchmarkResults {
-    //         name: self.config.crdt_type.name(),
-    //         crdt_type: self.config.crdt_type.clone(),
-    //         duration: duration,
-    //     };
-
-    //     results.push(result);
-    //     Ok(results)
-    // }
-
-    // pub fn run_benchmark(&mut self) -> Result<(), BenchmarkError> {
-    //     self.setup_environment()?;
-    //     self.execute_workload()?;
-    //     let results = self.collect_results()?;
-    //     let report = self.reporter.generate_report(results);
-
-    //     Ok(())
-    // }
+        Ok(())
+    }
 }

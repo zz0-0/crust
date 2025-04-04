@@ -4,6 +4,7 @@ use crust_core::sync::SyncType;
 
 use crate::metrics::metrics_definition::{Metric, MetricType, MetricValue};
 
+#[derive(Clone)]
 pub struct BenchmarkMetricsCollector {
     pub metrics: HashMap<String, Metric>,
     pub sync_type: SyncType,

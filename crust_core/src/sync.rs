@@ -86,7 +86,7 @@ impl SyncMode {
     }
 }
 
-// #[derive(Clone, Debug)]
+
 pub struct SyncConfig {
     pub sync_type: SyncType,
     pub sync_mode: SyncMode,

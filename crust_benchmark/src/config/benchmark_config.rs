@@ -3,6 +3,7 @@ use crust_core::{
     sync::{SyncMode, SyncType},
 };
 
+#[derive(Clone)]
 pub struct BenchmarkConfig {
     pub crdt_type: CrdtType<String>,
     pub sync_type: SyncType,
